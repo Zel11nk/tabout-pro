@@ -946,13 +946,11 @@ async function renderBookmarksDrawer() {
       return;
     }
 
-    // Count total bookmarks
     const totalCount = bookmarkGroups.reduce((sum, group) => sum + group.bookmarks.length, 0);
     
     drawerToggle.style.display = 'flex';
     toggleCount.textContent = totalCount;
 
-    // Filter out empty groups
     const validGroups = bookmarkGroups.filter(g => g.bookmarks && g.bookmarks.length > 0);
     
     if (validGroups.length === 0) {
@@ -981,34 +979,40 @@ async function renderBookmarksDrawer() {
         const safeTitle = title.replace(/"/g, '&quot;');
 
         return `
-          <button class="drawer-bookmark" data-action="open-bookmark" data-bookmark-url="${safeUrl}" title="${safeTitle}">
-            ${faviconUrl ? `<img class="drawer-bookmark-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
-            <div class="drawer-bookmark-content">
-              <span class="drawer-bookmark-title">${title}</span>
-              <span class="drawer-bookmark-domain">${domain}</span>
-            </div>
-          </button>`;
+          <div class="drawer-bookmark-wrapper" draggable="true" data-bookmark-id="${bookmark.id}" data-bookmark-url="${safeUrl}">
+            <button class="drawer-bookmark" data-action="open-bookmark" data-bookmark-url="${safeUrl}" title="${safeTitle}">
+              ${faviconUrl ? `<img class="drawer-bookmark-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
+              <div class="drawer-bookmark-content">
+                <span class="drawer-bookmark-title">${title}</span>
+                <span class="drawer-bookmark-domain">${domain}</span>
+              </div>
+            </button>
+          </div>`;
       }).join('');
 
+      const isHiddenGroup = group.name === 'Other Bookmarks';
+
       return `
-        <div class="drawer-group">
-          <div class="drawer-group-header" data-group-name="${group.name.replace(/"/g, '&quot;')}">
-            <span class="drawer-group-name">${group.name}</span>
-            <span class="drawer-group-count">${sanitizedBookmarks.length}</span>
-            <button class="drawer-group-toggle" data-group-name="${group.name.replace(/"/g, '&quot;')}">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-              </svg>
-            </button>
-          </div>
+        <div class="drawer-group" ${!isHiddenGroup ? 'draggable="true"' : ''} data-group-name="${group.name.replace(/"/g, '&quot;')}">
+          ${!isHiddenGroup ? `
+            <div class="drawer-group-header" data-group-name="${group.name.replace(/"/g, '&quot;')}">
+              <span class="drawer-group-name">${group.name}</span>
+              <span class="drawer-group-count">${sanitizedBookmarks.length}</span>
+              <button class="drawer-group-toggle" data-group-name="${group.name.replace(/"/g, '&quot;')}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+            </div>
+          ` : ''}
           <div class="drawer-group-content">
             ${bookmarksHtml}
           </div>
         </div>`;
     }).join('');
 
-    // Setup group toggle handlers
     setupGroupToggleHandlers();
+    setupBookmarkDragHandlers();
   } catch (err) {
     console.error('[tab-out] Failed to load bookmarks:', err);
     drawerToggle.style.display = 'none';
@@ -1034,6 +1038,152 @@ function setupGroupToggleHandlers() {
       }
     });
   });
+}
+
+let draggedItem = null;
+let draggedType = null;
+
+function setupBookmarkDragHandlers() {
+  document.querySelectorAll('.drawer-bookmark-wrapper').forEach(wrapper => {
+    wrapper.addEventListener('dragstart', handleDragStart);
+    wrapper.addEventListener('dragend', handleDragEnd);
+  });
+
+  document.querySelectorAll('.drawer-group').forEach(group => {
+    group.addEventListener('dragstart', handleGroupDragStart);
+    group.addEventListener('dragend', handleDragEnd);
+  });
+
+  document.querySelectorAll('.drawer-group-content').forEach(content => {
+    content.addEventListener('dragover', handleDragOver);
+    content.addEventListener('dragleave', handleDragLeave);
+    content.addEventListener('drop', handleDrop);
+  });
+
+  document.querySelectorAll('.drawer-group-header').forEach(header => {
+    header.addEventListener('dragover', handleGroupHeaderDragOver);
+    header.addEventListener('dragleave', handleDragLeave);
+    header.addEventListener('drop', handleGroupHeaderDrop);
+  });
+}
+
+function handleDragStart(e) {
+  draggedItem = e.target;
+  draggedType = 'bookmark';
+  e.dataTransfer.effectAllowed = 'move';
+  e.target.classList.add('dragging');
+}
+
+function handleGroupDragStart(e) {
+  if (!e.target.classList.contains('drawer-group')) return;
+  
+  draggedItem = e.target;
+  draggedType = 'group';
+  e.dataTransfer.effectAllowed = 'move';
+  e.target.classList.add('dragging');
+}
+
+function handleDragEnd(e) {
+  e.target.classList.remove('dragging');
+  draggedItem = null;
+  draggedType = null;
+  
+  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  
+  const target = e.currentTarget;
+  target.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function handleGroupHeaderDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+
+async function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+
+  if (!draggedItem) return;
+
+  const targetContent = e.currentTarget;
+  const targetGroup = targetContent.parentElement;
+  const targetGroupName = targetGroup.dataset.groupName;
+
+  if (draggedType === 'bookmark') {
+    const bookmarkId = draggedItem.dataset.bookmarkId;
+    const bookmarkUrl = draggedItem.dataset.bookmarkUrl;
+    
+    const sourceGroup = draggedItem.closest('.drawer-group');
+    const sourceGroupName = sourceGroup.dataset.groupName;
+
+    if (sourceGroupName !== targetGroupName) {
+      await moveBookmarkToFolder(bookmarkId, targetGroupName);
+      await renderBookmarksDrawer();
+      showToast('Bookmark moved');
+    }
+  }
+}
+
+async function handleGroupHeaderDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+
+  if (!draggedItem || draggedType !== 'group') return;
+
+  const targetHeader = e.currentTarget;
+  const targetGroup = targetHeader.parentElement;
+  const targetGroupName = targetGroup.dataset.groupName;
+  
+  const sourceGroupName = draggedItem.dataset.groupName;
+  
+  if (sourceGroupName !== targetGroupName) {
+    await reorderGroups(sourceGroupName, targetGroupName);
+    await renderBookmarksDrawer();
+    showToast('Folder reordered');
+  }
+}
+
+async function moveBookmarkToFolder(bookmarkId, targetFolderName) {
+  try {
+    const targetFolder = await findFolderByName(targetFolderName);
+    if (targetFolder) {
+      await chrome.bookmarks.move(bookmarkId, { parentId: targetFolder.id });
+    }
+  } catch (err) {
+    console.error('[tab-out] Failed to move bookmark:', err);
+  }
+}
+
+async function findFolderByName(folderName) {
+  return new Promise((resolve) => {
+    chrome.bookmarks.search({ title: folderName }, (results) => {
+      const folder = results.find(r => !r.url && r.title === folderName);
+      resolve(folder || null);
+    });
+  });
+}
+
+async function reorderGroups(sourceGroupName, targetGroupName) {
+  try {
+    const sourceFolder = await findFolderByName(sourceGroupName);
+    const targetFolder = await findFolderByName(targetGroupName);
+    
+    if (sourceFolder && targetFolder) {
+      await chrome.bookmarks.move(sourceFolder.id, { parentId: targetFolder.parentId, index: targetFolder.index });
+    }
+  } catch (err) {
+    console.error('[tab-out] Failed to reorder groups:', err);
+  }
 }
 
 /**
@@ -1063,32 +1213,43 @@ async function getAllBookmarks() {
       // Extract bookmarks grouped by folder
       const groups = [];
       
-      function extractGroups(nodes, parentName = '') {
+      function extractGroups(nodes, parentName = '', isRootOtherBookmarks = false) {
         for (const node of nodes) {
           if (node.url) {
             // This is a bookmark item
             // Find or create group for this bookmark
-            const groupName = parentName || 'Other Bookmarks';
+            // Hide "Other Bookmarks" folder name for root level bookmarks
+            const effectiveParentName = isRootOtherBookmarks ? '' : parentName;
+            const groupName = effectiveParentName || 'Other Bookmarks';
             let group = groups.find(g => g.name === groupName);
             if (!group) {
               group = { name: groupName, bookmarks: [] };
               groups.push(group);
             }
             group.bookmarks.push(node);
-          } else if (node.children && node.title && node.title !== 'Bookmarks bar' && node.title !== 'Other bookmarks') {
-            // This is a folder (skip root folders)
-            const folderName = parentName ? `${parentName} / ${node.title}` : node.title;
-            extractGroups(node.children, folderName);
+          } else if (node.children && node.title) {
+            // This is a folder
+            const isThisOtherBookmarks = node.title === 'Other bookmarks';
+            const isThisBookmarksBar = node.title === 'Bookmarks bar';
+            
+            if (isThisOtherBookmarks || isThisBookmarksBar) {
+              // Root folders - recurse and mark if this is "Other Bookmarks"
+              extractGroups(node.children, parentName, isThisOtherBookmarks);
+            } else {
+              // Regular folder - build path
+              const folderName = parentName ? `${parentName} / ${node.title}` : node.title;
+              extractGroups(node.children, folderName, false);
+            }
           } else if (node.children) {
             // Root folders - recurse without changing parent name
-            extractGroups(node.children, parentName);
+            extractGroups(node.children, parentName, isRootOtherBookmarks);
           }
         }
       }
       
       extractGroups(tree);
       
-      // Sort groups by name, with "Other Bookmarks" at the end
+      // Sort groups by name, with empty-named "Other Bookmarks" at the end
       groups.sort((a, b) => {
         if (a.name === 'Other Bookmarks') return 1;
         if (b.name === 'Other Bookmarks') return -1;

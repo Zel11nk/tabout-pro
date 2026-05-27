@@ -926,39 +926,34 @@ function renderDomainCard(group) {
    ---------------------------------------------------------------- */
 
 /**
- * renderBookmarksDrawer()
+ * renderBookmarksSidebar()
  *
- * Renders the bookmarks drawer content with folder groups.
+ * Renders the bookmarks sidebar content with folder groups.
  */
-async function renderBookmarksDrawer() {
-  const drawer = document.getElementById('bookmarksDrawer');
-  const drawerContent = document.getElementById('drawerContent');
-  const drawerToggle = document.getElementById('drawerToggle');
-  const toggleCount = document.getElementById('drawerToggleCount');
+async function renderBookmarksSidebar() {
+  const sidebar = document.getElementById('bookmarksSidebar');
+  const sidebarContent = document.getElementById('sidebarContent');
 
-  if (!drawer || !drawerContent) return;
+  if (!sidebar || !sidebarContent) return;
 
   try {
     const bookmarkGroups = await getAllBookmarks();
     
     if (!bookmarkGroups || bookmarkGroups.length === 0) {
-      drawerToggle.style.display = 'none';
+      sidebar.style.display = 'none';
       return;
     }
 
-    const totalCount = bookmarkGroups.reduce((sum, group) => sum + group.bookmarks.length, 0);
-    
-    drawerToggle.style.display = 'flex';
-    toggleCount.textContent = totalCount;
+    sidebar.style.display = 'flex';
 
     const validGroups = bookmarkGroups.filter(g => g.bookmarks && g.bookmarks.length > 0);
     
     if (validGroups.length === 0) {
-      drawerToggle.style.display = 'none';
+      sidebar.style.display = 'none';
       return;
     }
 
-    drawerContent.innerHTML = validGroups.map(group => {
+    sidebarContent.innerHTML = validGroups.map(group => {
       const sanitizedBookmarks = group.bookmarks.filter(b => b && b.url && typeof b.url === 'string');
       
       if (sanitizedBookmarks.length === 0) return '';
@@ -1003,7 +998,7 @@ async function renderBookmarksDrawer() {
               </button>
             </div>
           ` : ''}
-          <div class="drawer-group-content">
+          <div class="drawer-group-content" style="display: none;">
             ${bookmarksHtml}
           </div>
         </div>`;
@@ -1012,7 +1007,7 @@ async function renderBookmarksDrawer() {
     setupGroupToggleHandlers();
   } catch (err) {
     console.error('[tab-out] Failed to load bookmarks:', err);
-    drawerToggle.style.display = 'none';
+    sidebar.style.display = 'none';
   }
 }
 
@@ -1101,8 +1096,7 @@ async function getAllBookmarks() {
       
       findOtherBookmarks(tree);
       
-      // Sort groups by name
-      groups.sort((a, b) => a.name.localeCompare(b.name));
+      // Keep original order (no sorting)
       
       console.log('[tab-out] Found bookmark groups from 4tab-out:', groups.length);
       resolve(groups);
@@ -1424,11 +1418,11 @@ async function renderStaticDashboard() {
   // --- Render "Saved for Later" column ---
   await renderDeferredColumn();
 
-  // --- Render bookmarks drawer ---
-  await renderBookmarksDrawer();
+  // --- Render bookmarks sidebar ---
+  await renderBookmarksSidebar();
 
-  // --- Render todo drawer ---
-  await renderTodoDrawer();
+  // --- Render todo sidebar ---
+  await renderTodoSidebar();
 }
 
 async function renderDashboard() {
@@ -1862,7 +1856,7 @@ function renderTodoItem(todo) {
   `;
 }
 
-async function renderTodoDrawer() {
+async function renderTodoSidebar() {
   await loadTodos();
   
   // 未完成的任务按截止时间排序（越近越靠前）
@@ -1901,15 +1895,9 @@ async function renderTodoDrawer() {
   const activeTodoCount = document.getElementById('activeTodoCount');
   const completedTodoCount = document.getElementById('completedTodoCount');
   const todoStats = document.getElementById('todoStats');
-  const todoToggleCount = document.getElementById('todoDrawerToggleCount');
   
   const activeCount = activeTodos.length;
   const completedCount = completedTodos.length;
-  
-  if (todoToggleCount) {
-    todoToggleCount.textContent = activeCount;
-    todoToggleCount.style.display = activeCount > 0 ? 'flex' : 'none';
-  }
   
   // Render active todos
   if (activeCount === 0) {
@@ -1938,54 +1926,7 @@ async function renderTodoDrawer() {
   }
 }
 
-function openTodoDrawer() {
-  const drawer = document.getElementById('todoDrawer');
-  const backdrop = document.getElementById('drawerBackdrop');
-  const toggle = document.getElementById('todoDrawerToggle');
-  
-  closeDrawer();
-  
-  if (drawer) drawer.classList.add('open');
-  if (backdrop) backdrop.classList.add('active');
-  if (toggle) toggle.classList.add('active');
-  
-  document.body.style.overflow = 'hidden';
-}
 
-function closeTodoDrawer() {
-  const drawer = document.getElementById('todoDrawer');
-  const backdrop = document.getElementById('drawerBackdrop');
-  const toggle = document.getElementById('todoDrawerToggle');
-  
-  if (drawer) drawer.classList.remove('open');
-  if (backdrop) backdrop.classList.remove('active');
-  if (toggle) toggle.classList.remove('active');
-  
-  document.body.style.overflow = '';
-}
-
-function toggleTodoDrawer() {
-  const drawer = document.getElementById('todoDrawer');
-  if (drawer.classList.contains('open')) {
-    closeTodoDrawer();
-  } else {
-    openTodoDrawer();
-  }
-}
-
-function setupTodoDrawerHandlers() {
-  const toggle = document.getElementById('todoDrawerToggle');
-  const close = document.getElementById('todoDrawerClose');
-  const backdrop = document.getElementById('drawerBackdrop');
-  
-  if (toggle) toggle.addEventListener('click', toggleTodoDrawer);
-  if (close) close.addEventListener('click', closeTodoDrawer);
-  
-  backdrop.addEventListener('click', (e) => {
-    closeDrawer();
-    closeTodoDrawer();
-  });
-}
 
 function showEditTodoModal(todo) {
   let modal = document.getElementById('todoEditModal');
@@ -2038,7 +1979,7 @@ async function addTodo(text, dueDate) {
   
   todos.unshift(newTodo);
   await saveTodos();
-  await renderTodoDrawer();
+  await renderTodoSidebar();
   
   showToast('Todo added');
 }
@@ -2051,7 +1992,7 @@ async function toggleTodo(id) {
   todo.completedAt = todo.completed ? new Date().toISOString() : null;
   
   await saveTodos();
-  await renderTodoDrawer();
+  await renderTodoSidebar();
   
   showToast(todo.completed ? 'Todo completed!' : 'Todo reactivated');
 }
@@ -2066,7 +2007,7 @@ async function updateTodo(id, text, dueDate) {
   todo.dueDate = dueDate || null;
   
   await saveTodos();
-  await renderTodoDrawer();
+  await renderTodoSidebar();
   
   showToast('Todo updated');
 }
@@ -2074,7 +2015,7 @@ async function updateTodo(id, text, dueDate) {
 async function deleteTodo(id) {
   todos = todos.filter(t => t.id !== id);
   await saveTodos();
-  await renderTodoDrawer();
+  await renderTodoSidebar();
   
   showToast('Todo deleted');
 }
@@ -2199,54 +2140,37 @@ function setupConfigScriptHandler() {
    DRAWER FUNCTIONS
    ---------------------------------------------------------------- */
 
-function openDrawer() {
-  const drawer = document.getElementById('bookmarksDrawer');
-  const backdrop = document.getElementById('drawerBackdrop');
-  const toggle = document.getElementById('drawerToggle');
-  
-  if (drawer) drawer.classList.add('open');
-  if (backdrop) backdrop.classList.add('active');
-  if (toggle) toggle.classList.add('active');
-  
-  document.body.style.overflow = 'hidden';
-}
-
-function closeDrawer() {
-  const drawer = document.getElementById('bookmarksDrawer');
-  const backdrop = document.getElementById('drawerBackdrop');
-  const toggle = document.getElementById('drawerToggle');
-  
-  if (drawer) drawer.classList.remove('open');
-  if (backdrop) backdrop.classList.remove('active');
-  if (toggle) toggle.classList.remove('active');
-  
-  document.body.style.overflow = '';
-}
-
-function toggleDrawer() {
-  const drawer = document.getElementById('bookmarksDrawer');
-  if (drawer.classList.contains('open')) {
-    closeDrawer();
-  } else {
-    openDrawer();
-  }
-}
-
 function setupDrawerHandlers() {
-  const toggle = document.getElementById('drawerToggle');
-  const close = document.getElementById('drawerClose');
-  const backdrop = document.getElementById('drawerBackdrop');
-  
-  if (toggle) toggle.addEventListener('click', toggleDrawer);
-  if (close) close.addEventListener('click', closeDrawer);
-  
   // Close on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      closeDrawer();
-      closeTodoDrawer();
+      closeEditTodoModal();
     }
   });
+}
+
+function setupSidebarToggleHandlers() {
+  // Bookmarks sidebar toggle
+  const bookmarksHeader = document.querySelector('#bookmarksSidebar .sidebar-header');
+  if (bookmarksHeader) {
+    bookmarksHeader.addEventListener('click', () => {
+      const sidebar = document.getElementById('bookmarksSidebar');
+      if (sidebar) {
+        sidebar.classList.toggle('collapsed');
+      }
+    });
+  }
+
+  // Todo sidebar toggle
+  const todoHeader = document.querySelector('#todoSidebar .sidebar-header');
+  if (todoHeader) {
+    todoHeader.addEventListener('click', () => {
+      const sidebar = document.getElementById('todoSidebar');
+      if (sidebar) {
+        sidebar.classList.toggle('collapsed');
+      }
+    });
+  }
 }
 
 /* ----------------------------------------------------------------
@@ -2554,5 +2478,5 @@ setupFaviconErrorHandlers();
 setupConfigScriptHandler();
 setupSearchHandlers();
 setupDrawerHandlers();
-setupTodoDrawerHandlers();
+setupSidebarToggleHandlers();
 renderDashboard();

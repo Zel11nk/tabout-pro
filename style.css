@@ -43,18 +43,118 @@ body::before {
 .container {
   position: relative;
   z-index: 1;
-  max-width: 1500px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 48px 32px 80px;
   display: flex;
   gap: 24px;
+  justify-content: flex-start;
+}
+
+/* Right sidebar container */
+.right-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 32px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+/* Bookmarks sidebar */
+.bookmarks-sidebar {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Todo sidebar */
+.todo-sidebar {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px;
+  border-bottom: 1px solid var(--warm-gray);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sidebar-header:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.sidebar-title {
+  font-family: 'Newsreader', serif;
+  font-weight: 400;
+  font-size: 16px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 4px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  color: var(--text);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.bookmarks-sidebar.collapsed .sidebar-toggle,
+.todo-sidebar.collapsed .sidebar-toggle {
+  transform: rotate(-90deg);
+}
+
+.bookmarks-sidebar.collapsed .sidebar-content,
+.todo-sidebar.collapsed .sidebar-content {
+  display: none;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
 }
 
 /* When the saved-for-later sidebar is open, expand the container
    so the tab grid still has room for 2-3 columns */
 .container:has(.dashboard-columns) {
-  max-width: 1300px;
+  max-width: 1600px;
 }
 
 /* ---- Header ---- */

@@ -139,110 +139,97 @@
 
   </main><!-- end .main-content -->
 
-</div><!-- end .container -->
-
-<!-- ================================================================
-     RIGHT DRAWER — Bookmarks drawer
-     ================================================================ -->
-<button class="drawer-toggle bookmarks-toggle" id="drawerToggle" aria-label="Toggle bookmarks drawer">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-  </svg>
-  <span class="drawer-toggle-count" id="drawerToggleCount"></span>
-</button>
-
-<aside class="drawer bookmarks-drawer" id="bookmarksDrawer">
-  <div class="drawer-header">
-    <div class="drawer-title">Bookmarks</div>
-    <button class="drawer-close" id="drawerClose" aria-label="Close drawer">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-  </div>
-  <div class="drawer-content" id="drawerContent"></div>
-</aside>
-
-<!-- ================================================================
-     RIGHT DRAWER — Todo drawer
-     ================================================================ -->
-<button class="drawer-toggle todo-toggle" id="todoDrawerToggle" aria-label="Toggle todo drawer">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-  </svg>
-  <span class="drawer-toggle-count" id="todoDrawerToggleCount"></span>
-</button>
-
-<aside class="drawer todo-drawer" id="todoDrawer">
-  <div class="drawer-header">
-    <div class="drawer-title">Todo List</div>
-    <button class="drawer-close" id="todoDrawerClose" aria-label="Close drawer">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-  </div>
-  <div class="drawer-content" id="todoDrawerContent">
-    <!-- Todo form -->
-    <div class="todo-form" id="todoForm">
-      <div class="todo-input-row">
-        <div class="todo-input-wrapper">
-          <svg class="todo-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          <input type="text" id="todoInput" placeholder="Add a new todo..." class="todo-input">
-        </div>
-      </div>
-      <div class="todo-action-row">
-        <div class="todo-date-wrapper">
-          <input type="date" id="todoDueDate" class="todo-due-date">
-          <button class="todo-date-clear" data-action="clear-due-date" title="Clear date">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <svg class="todo-date-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
-        <button class="todo-add-btn" data-action="add-todo" title="Add todo">
+  <!-- ================================================================
+       RIGHT SIDEBAR — Bookmarks + Todo
+       ================================================================ -->
+  <div class="right-sidebar">
+    <!-- Bookmarks section -->
+    <aside class="bookmarks-sidebar" id="bookmarksSidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Bookmarks</div>
+        <button class="sidebar-toggle" data-sidebar="bookmarks">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
         </button>
       </div>
-    </div>
-    
-    <!-- Active todos section -->
-    <div class="todo-section active-section">
-      <div class="todo-section-header">
-        <h3 class="todo-section-title">To Do</h3>
-        <span class="todo-section-count" id="activeTodoCount">0</span>
+      <div class="sidebar-content" id="sidebarContent"></div>
+    </aside>
+
+    <!-- Todo section -->
+    <aside class="todo-sidebar collapsed" id="todoSidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Todo List</div>
+        <button class="sidebar-toggle" data-sidebar="todo">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
       </div>
-      <div class="todo-list" id="activeTodoList"></div>
-      <div class="todo-empty" id="activeEmpty" style="display:none">
-        No active todos
+      <div class="sidebar-content" id="todoSidebarContent">
+        <!-- Todo form -->
+        <div class="todo-form" id="todoForm">
+          <div class="todo-input-row">
+            <div class="todo-input-wrapper">
+              <svg class="todo-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 002 2" />
+              </svg>
+              <input type="text" id="todoInput" placeholder="Add a new todo..." class="todo-input">
+            </div>
+          </div>
+          <div class="todo-action-row">
+            <div class="todo-date-wrapper">
+              <input type="date" id="todoDueDate" class="todo-due-date">
+              <button class="todo-date-clear" data-action="clear-due-date" title="Clear date">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <svg class="todo-date-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <button class="todo-add-btn" data-action="add-todo" title="Add todo">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Active todos section -->
+        <div class="todo-section active-section">
+          <div class="todo-section-header">
+            <h3 class="todo-section-title">To Do</h3>
+            <span class="todo-section-count" id="activeTodoCount">0</span>
+          </div>
+          <div class="todo-list" id="activeTodoList"></div>
+          <div class="todo-empty" id="activeEmpty" style="display:none">
+            No active todos
+          </div>
+        </div>
+        
+        <!-- Completed todos section -->
+        <div class="todo-section completed-section">
+          <div class="todo-section-header">
+            <h3 class="todo-section-title">Completed</h3>
+            <span class="todo-section-count" id="completedTodoCount">0</span>
+          </div>
+          <div class="todo-list" id="completedTodoList"></div>
+          <div class="todo-empty" id="completedEmpty" style="display:none">
+            No completed todos
+          </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="todo-stats" id="todoStats">
+          <span class="todo-active-count">0</span> active / <span class="todo-completed-count">0</span> completed
+        </div>
       </div>
-    </div>
-    
-    <!-- Completed todos section -->
-    <div class="todo-section completed-section">
-      <div class="todo-section-header">
-        <h3 class="todo-section-title">Completed</h3>
-        <span class="todo-section-count" id="completedTodoCount">0</span>
-      </div>
-      <div class="todo-list" id="completedTodoList"></div>
-      <div class="todo-empty" id="completedEmpty" style="display:none">
-        No completed todos
-      </div>
-    </div>
-    
-    <!-- Stats -->
-    <div class="todo-stats" id="todoStats">
-      <span class="todo-active-count">0</span> active / <span class="todo-completed-count">0</span> completed
-    </div>
+    </aside>
   </div>
-</aside>
+
+</div><!-- end .container -->
 
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
 

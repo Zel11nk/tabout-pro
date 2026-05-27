@@ -979,21 +979,19 @@ async function renderBookmarksDrawer() {
         const safeTitle = title.replace(/"/g, '&quot;');
 
         return `
-          <div class="drawer-bookmark-wrapper" draggable="true" data-bookmark-id="${bookmark.id}" data-bookmark-url="${safeUrl}">
-            <button class="drawer-bookmark" data-action="open-bookmark" data-bookmark-url="${safeUrl}" title="${safeTitle}">
-              ${faviconUrl ? `<img class="drawer-bookmark-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
-              <div class="drawer-bookmark-content">
-                <span class="drawer-bookmark-title">${title}</span>
-                <span class="drawer-bookmark-domain">${domain}</span>
-              </div>
-            </button>
-          </div>`;
+          <button class="drawer-bookmark" data-action="open-bookmark" data-bookmark-url="${safeUrl}" title="${safeTitle}">
+            ${faviconUrl ? `<img class="drawer-bookmark-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
+            <div class="drawer-bookmark-content">
+              <span class="drawer-bookmark-title">${title}</span>
+              <span class="drawer-bookmark-domain">${domain}</span>
+            </div>
+          </button>`;
       }).join('');
 
-      const isHiddenGroup = group.name === 'Other Bookmarks';
+      const isHiddenGroup = validGroups.length === 1 && group.name === '4tab-out';
 
       return `
-        <div class="drawer-group" ${!isHiddenGroup ? 'draggable="true"' : ''} data-group-name="${group.name.replace(/"/g, '&quot;')}">
+        <div class="drawer-group" data-group-name="${group.name.replace(/"/g, '&quot;')}">
           ${!isHiddenGroup ? `
             <div class="drawer-group-header" data-group-name="${group.name.replace(/"/g, '&quot;')}">
               <span class="drawer-group-name">${group.name}</span>
@@ -1012,7 +1010,6 @@ async function renderBookmarksDrawer() {
     }).join('');
 
     setupGroupToggleHandlers();
-    setupBookmarkDragHandlers();
   } catch (err) {
     console.error('[tab-out] Failed to load bookmarks:', err);
     drawerToggle.style.display = 'none';
@@ -1040,160 +1037,14 @@ function setupGroupToggleHandlers() {
   });
 }
 
-let draggedItem = null;
-let draggedType = null;
-
-function setupBookmarkDragHandlers() {
-  document.querySelectorAll('.drawer-bookmark-wrapper').forEach(wrapper => {
-    wrapper.addEventListener('dragstart', handleDragStart);
-    wrapper.addEventListener('dragend', handleDragEnd);
-  });
-
-  document.querySelectorAll('.drawer-group').forEach(group => {
-    group.addEventListener('dragstart', handleGroupDragStart);
-    group.addEventListener('dragend', handleDragEnd);
-  });
-
-  document.querySelectorAll('.drawer-group-content').forEach(content => {
-    content.addEventListener('dragover', handleDragOver);
-    content.addEventListener('dragleave', handleDragLeave);
-    content.addEventListener('drop', handleDrop);
-  });
-
-  document.querySelectorAll('.drawer-group-header').forEach(header => {
-    header.addEventListener('dragover', handleGroupHeaderDragOver);
-    header.addEventListener('dragleave', handleDragLeave);
-    header.addEventListener('drop', handleGroupHeaderDrop);
-  });
-}
-
-function handleDragStart(e) {
-  draggedItem = e.target;
-  draggedType = 'bookmark';
-  e.dataTransfer.effectAllowed = 'move';
-  e.target.classList.add('dragging');
-}
-
-function handleGroupDragStart(e) {
-  if (!e.target.classList.contains('drawer-group')) return;
-  
-  draggedItem = e.target;
-  draggedType = 'group';
-  e.dataTransfer.effectAllowed = 'move';
-  e.target.classList.add('dragging');
-}
-
-function handleDragEnd(e) {
-  e.target.classList.remove('dragging');
-  draggedItem = null;
-  draggedType = null;
-  
-  document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
-}
-
-function handleDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  
-  const target = e.currentTarget;
-  target.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
-
-function handleGroupHeaderDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  e.currentTarget.classList.add('drag-over');
-}
-
-async function handleDrop(e) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-
-  if (!draggedItem) return;
-
-  const targetContent = e.currentTarget;
-  const targetGroup = targetContent.parentElement;
-  const targetGroupName = targetGroup.dataset.groupName;
-
-  if (draggedType === 'bookmark') {
-    const bookmarkId = draggedItem.dataset.bookmarkId;
-    const bookmarkUrl = draggedItem.dataset.bookmarkUrl;
-    
-    const sourceGroup = draggedItem.closest('.drawer-group');
-    const sourceGroupName = sourceGroup.dataset.groupName;
-
-    if (sourceGroupName !== targetGroupName) {
-      await moveBookmarkToFolder(bookmarkId, targetGroupName);
-      await renderBookmarksDrawer();
-      showToast('Bookmark moved');
-    }
-  }
-}
-
-async function handleGroupHeaderDrop(e) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-
-  if (!draggedItem || draggedType !== 'group') return;
-
-  const targetHeader = e.currentTarget;
-  const targetGroup = targetHeader.parentElement;
-  const targetGroupName = targetGroup.dataset.groupName;
-  
-  const sourceGroupName = draggedItem.dataset.groupName;
-  
-  if (sourceGroupName !== targetGroupName) {
-    await reorderGroups(sourceGroupName, targetGroupName);
-    await renderBookmarksDrawer();
-    showToast('Folder reordered');
-  }
-}
-
-async function moveBookmarkToFolder(bookmarkId, targetFolderName) {
-  try {
-    const targetFolder = await findFolderByName(targetFolderName);
-    if (targetFolder) {
-      await chrome.bookmarks.move(bookmarkId, { parentId: targetFolder.id });
-    }
-  } catch (err) {
-    console.error('[tab-out] Failed to move bookmark:', err);
-  }
-}
-
-async function findFolderByName(folderName) {
-  return new Promise((resolve) => {
-    chrome.bookmarks.search({ title: folderName }, (results) => {
-      const folder = results.find(r => !r.url && r.title === folderName);
-      resolve(folder || null);
-    });
-  });
-}
-
-async function reorderGroups(sourceGroupName, targetGroupName) {
-  try {
-    const sourceFolder = await findFolderByName(sourceGroupName);
-    const targetFolder = await findFolderByName(targetGroupName);
-    
-    if (sourceFolder && targetFolder) {
-      await chrome.bookmarks.move(sourceFolder.id, { parentId: targetFolder.parentId, index: targetFolder.index });
-    }
-  } catch (err) {
-    console.error('[tab-out] Failed to reorder groups:', err);
-  }
-}
-
 /**
  * getAllBookmarks()
  *
- * Retrieves all bookmarks from the user's bookmark tree with folder structure.
+ * Retrieves bookmarks from "4tab-out" folder only.
  * Returns an array of groups, each containing a folder name and its bookmarks.
  */
 async function getAllBookmarks() {
-  console.log('[tab-out] Requesting all bookmarks');
+  console.log('[tab-out] Requesting bookmarks from 4tab-out folder');
   
   if (!chrome.bookmarks || typeof chrome.bookmarks.getTree !== 'function') {
     console.warn('[tab-out] Bookmarks API not available');
@@ -1210,17 +1061,30 @@ async function getAllBookmarks() {
       
       console.log('[tab-out] Got bookmarks tree');
       
-      // Extract bookmarks grouped by folder
+      // Extract bookmarks only from "4tab-out" folder
       const groups = [];
       
-      function extractGroups(nodes, parentName = '', isRootOtherBookmarks = false) {
+      function findOtherBookmarks(nodes) {
+        for (const node of nodes) {
+          if (node.title === '4tab-out' && node.children) {
+            // Found the 4tab-out folder
+            extractGroupsFromFolder(node.children, '');
+            return true;
+          }
+          if (node.children) {
+            if (findOtherBookmarks(node.children)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      
+      function extractGroupsFromFolder(nodes, parentName) {
         for (const node of nodes) {
           if (node.url) {
             // This is a bookmark item
-            // Find or create group for this bookmark
-            // Hide "Other Bookmarks" folder name for root level bookmarks
-            const effectiveParentName = isRootOtherBookmarks ? '' : parentName;
-            const groupName = effectiveParentName || 'Other Bookmarks';
+            const groupName = parentName || '4tab-out';
             let group = groups.find(g => g.name === groupName);
             if (!group) {
               group = { name: groupName, bookmarks: [] };
@@ -1228,35 +1092,19 @@ async function getAllBookmarks() {
             }
             group.bookmarks.push(node);
           } else if (node.children && node.title) {
-            // This is a folder
-            const isThisOtherBookmarks = node.title === 'Other bookmarks';
-            const isThisBookmarksBar = node.title === 'Bookmarks bar';
-            
-            if (isThisOtherBookmarks || isThisBookmarksBar) {
-              // Root folders - recurse and mark if this is "Other Bookmarks"
-              extractGroups(node.children, parentName, isThisOtherBookmarks);
-            } else {
-              // Regular folder - build path
-              const folderName = parentName ? `${parentName} / ${node.title}` : node.title;
-              extractGroups(node.children, folderName, false);
-            }
-          } else if (node.children) {
-            // Root folders - recurse without changing parent name
-            extractGroups(node.children, parentName, isRootOtherBookmarks);
+            // This is a subfolder
+            const folderName = parentName ? `${parentName} / ${node.title}` : node.title;
+            extractGroupsFromFolder(node.children, folderName);
           }
         }
       }
       
-      extractGroups(tree);
+      findOtherBookmarks(tree);
       
-      // Sort groups by name, with empty-named "Other Bookmarks" at the end
-      groups.sort((a, b) => {
-        if (a.name === 'Other Bookmarks') return 1;
-        if (b.name === 'Other Bookmarks') return -1;
-        return a.name.localeCompare(b.name);
-      });
+      // Sort groups by name
+      groups.sort((a, b) => a.name.localeCompare(b.name));
       
-      console.log('[tab-out] Found bookmark groups:', groups.length);
+      console.log('[tab-out] Found bookmark groups from 4tab-out:', groups.length);
       resolve(groups);
     });
   });

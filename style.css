@@ -1045,45 +1045,6 @@ header {
   margin-left: 8px;
 }
 
-/* ---- Drag and Drop Styles ---- */
-.drawer-bookmark-wrapper {
-  cursor: grab;
-  user-select: none;
-}
-
-.drawer-bookmark-wrapper:active {
-  cursor: grabbing;
-}
-
-.drawer-bookmark-wrapper.dragging {
-  opacity: 0.5;
-  transform: scale(0.95);
-}
-
-.drawer-group {
-  cursor: grab;
-  user-select: none;
-}
-
-.drawer-group:active {
-  cursor: grabbing;
-}
-
-.drawer-group.dragging {
-  opacity: 0.5;
-  transform: scale(0.98);
-}
-
-.drawer-group-content.drag-over {
-  background: rgba(45, 90, 39, 0.06);
-  border-left-color: var(--accent-amber);
-}
-
-.drawer-group-header.drag-over {
-  background: rgba(45, 90, 39, 0.08);
-  border-radius: 6px;
-}
-
 /* ---- Main content wrapper ---- */
 .main-content {
   flex: 1;

@@ -619,13 +619,21 @@ function timeAgo(dateStr) {
 }
 
 /**
- * getGreeting() - "Good morning / afternoon / evening"
+ * getTimeDisplay() - "09:41"
  */
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+function getTimeDisplay() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+
+function renderTimeDisplay() {
+  const timeEl = document.getElementById('greeting');
+  if (!timeEl) return;
+
+  const time = getTimeDisplay();
+  timeEl.textContent = time;
+  timeEl.dataset.time = time;
+  timeEl.setAttribute('aria-label', time);
 }
 
 /**
@@ -919,7 +927,7 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
     const faviconUrl = getFaviconUrl(domain);
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
+    return `<div class="page-chip clickable${chipClass}" draggable="true" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <div class="chip-actions">
@@ -1000,7 +1008,7 @@ function renderDomainCard(group) {
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
     const faviconUrl = getFaviconUrl(domain);
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
+    return `<div class="page-chip clickable${chipClass}" draggable="true" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <div class="chip-actions">
@@ -1073,7 +1081,7 @@ async function renderBookmarksSidebar() {
 
     sidebar.style.display = 'flex';
 
-    const validGroups = bookmarkGroups.filter(hasBookmarkContent);
+    const validGroups = bookmarkGroups;
     
     if (validGroups.length === 0) {
       sidebar.style.display = 'none';
@@ -1089,6 +1097,7 @@ async function renderBookmarksSidebar() {
     }).join('');
 
     setupGroupToggleHandlers();
+    setupBookmarkDropTargets();
   } catch (err) {
     console.error('[tab-out] Failed to load bookmarks:', err);
     sidebar.style.display = 'none';
@@ -1143,14 +1152,15 @@ function sortBookmarkGroups(groups, openTimes, { keepRootLast = false } = {}) {
 
 function renderBookmarkGroup(group, { depth, path, hideHeader = false }) {
   const count = getBookmarkCount(group);
-  if (count === 0) return '';
+  if (count === 0 && !group.id) return '';
 
   const isOpen = hideHeader;
   const groupName = group.name || 'Untitled folder';
   const safeGroupName = escapeHtml(groupName);
+  const safeFolderId = escapeAttr(group.id || '');
 
   const headerHtml = hideHeader ? '' : `
-    <div class="drawer-group-header" aria-expanded="${isOpen ? 'true' : 'false'}">
+    <div class="drawer-group-header bookmark-drop-target" data-bookmark-folder-id="${safeFolderId}" aria-expanded="${isOpen ? 'true' : 'false'}">
       <span class="drawer-group-name">${safeGroupName}</span>
       <span class="drawer-group-count">${count}</span>
       <button class="drawer-group-toggle" type="button" aria-label="Toggle ${escapeAttr(groupName)}">
@@ -1163,7 +1173,7 @@ function renderBookmarkGroup(group, { depth, path, hideHeader = false }) {
   const bookmarksHtml = renderBookmarkItems(group.bookmarks || []);
   const openTimes = getBookmarkOpenTimes();
   const sortedChildren = sortBookmarkGroups(
-    (group.children || []).filter(hasBookmarkContent),
+    group.children || [],
     openTimes
   );
   const childrenHtml = sortedChildren
@@ -1177,7 +1187,7 @@ function renderBookmarkGroup(group, { depth, path, hideHeader = false }) {
   return `
     <div class="drawer-group ${depth > 0 ? 'drawer-subgroup' : ''}" data-group-path="${path}">
       ${headerHtml}
-      <div class="drawer-group-content" ${isOpen ? '' : 'hidden'}>
+      <div class="drawer-group-content bookmark-drop-target" data-bookmark-folder-id="${safeFolderId}" ${isOpen ? '' : 'hidden'}>
         ${childrenHtml}
         ${bookmarksHtml}
       </div>
@@ -1307,12 +1317,13 @@ async function getAllBookmarks() {
         }
 
         return rootBookmarks.length > 0
-          ? [...folderGroups, { name: '4tab-out', bookmarks: rootBookmarks, children: [], isRoot: true }]
+          ? [...folderGroups, { id: nodes[0]?.parentId || '', name: '4tab-out', bookmarks: rootBookmarks, children: [], isRoot: true }]
           : folderGroups;
       }
 
       function buildBookmarkFolder(folderNode) {
         const group = {
+          id: folderNode.id,
           name: folderNode.title || 'Untitled folder',
           bookmarks: [],
           children: []
@@ -1323,9 +1334,7 @@ async function getAllBookmarks() {
             group.bookmarks.push(node);
           } else if (node.children && node.title) {
             const childGroup = buildBookmarkFolder(node);
-            if (hasBookmarkContent(childGroup)) {
-              group.children.push(childGroup);
-            }
+            group.children.push(childGroup);
           }
         }
 
@@ -1501,7 +1510,7 @@ function renderArchiveItem(item) {
  * renderStaticDashboard()
  *
  * The main render function:
- * 1. Paints greeting + date
+ * 1. Paints time + date
  * 2. Fetches open tabs via chrome.tabs.query()
  * 3. Groups tabs by domain (with landing pages pulled out to their own group)
  * 4. Renders domain cards
@@ -1510,9 +1519,8 @@ function renderArchiveItem(item) {
  */
 async function renderStaticDashboard() {
   // --- Header ---
-  const greetingEl = document.getElementById('greeting');
   const dateEl     = document.getElementById('dateDisplay');
-  if (greetingEl) greetingEl.textContent = getGreeting();
+  renderTimeDisplay();
   if (dateEl)     dateEl.textContent     = getDateDisplay();
 
   // --- Fetch tabs ---
@@ -2005,6 +2013,29 @@ document.addEventListener('click', async (e) => {
   }
 });
 
+document.addEventListener('dragstart', (e) => {
+  const chip = e.target.closest?.('.page-chip[draggable="true"]');
+  if (!chip || !e.dataTransfer) return;
+
+  const tab = {
+    url: chip.dataset.tabUrl,
+    title: chip.dataset.tabTitle || chip.querySelector('.chip-text')?.textContent?.trim(),
+  };
+
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('application/x-tab-out-tab', JSON.stringify(tab));
+  e.dataTransfer.setData('text/plain', tab.url || '');
+  chip.classList.add('dragging');
+});
+
+document.addEventListener('dragend', (e) => {
+  const chip = e.target.closest?.('.page-chip[draggable="true"]');
+  chip?.classList.remove('dragging');
+  document.querySelectorAll('.bookmark-drop-target.drop-ready').forEach(target => {
+    target.classList.remove('drop-ready');
+  });
+});
+
 // ---- Archive toggle - expand/collapse the archive section ----
 document.addEventListener('click', (e) => {
   const toggle = e.target.closest('#archiveToggle');
@@ -2415,6 +2446,66 @@ function setupSidebarToggleHandlers() {
 
   setupToggle('bookmarksSidebar', 'bookmarks');
   setupToggle('todoSidebar', 'todo list');
+}
+
+function setupBookmarkDropTargets() {
+  document.querySelectorAll('.bookmark-drop-target').forEach(target => {
+    target.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer?.types.includes('application/x-tab-out-tab')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      target.classList.add('drop-ready');
+    });
+
+    target.addEventListener('dragleave', (e) => {
+      if (!target.contains(e.relatedTarget)) target.classList.remove('drop-ready');
+    });
+
+    target.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      target.classList.remove('drop-ready');
+
+      const folderId = target.dataset.bookmarkFolderId;
+      const serializedTab = e.dataTransfer?.getData('application/x-tab-out-tab');
+      if (!folderId || !serializedTab) return;
+
+      try {
+        const tab = JSON.parse(serializedTab);
+        await saveTabToBookmarkFolder(folderId, tab);
+        await renderBookmarksSidebar();
+        showToast('Saved to bookmarks');
+      } catch (err) {
+        console.error('[tab-out] Failed to save dragged tab:', err);
+        showToast('Could not save bookmark');
+      }
+    });
+  });
+}
+
+async function saveTabToBookmarkFolder(parentId, tab) {
+  if (!tab?.url || !chrome.bookmarks) return;
+
+  const children = await new Promise((resolve, reject) => {
+    chrome.bookmarks.getChildren(parentId, (items) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(items);
+    });
+  });
+
+  if (children.some(item => item.url === tab.url)) return;
+
+  await new Promise((resolve, reject) => {
+    chrome.bookmarks.create({ parentId, title: tab.title || tab.url, url: tab.url }, (bookmark) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(bookmark);
+    });
+  });
 }
 
 /* ----------------------------------------------------------------
@@ -3054,6 +3145,20 @@ function setupCursorStarTrail() {
   }, { passive: true });
 }
 
+function setupClock() {
+  const refresh = () => {
+    const dateEl = document.getElementById('dateDisplay');
+    renderTimeDisplay();
+    if (dateEl) dateEl.textContent = getDateDisplay();
+  };
+
+  const delay = 60000 - (Date.now() % 60000);
+  setTimeout(() => {
+    refresh();
+    setInterval(refresh, 60000);
+  }, delay);
+}
+
 /* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
@@ -3064,4 +3169,5 @@ setupSearchHandlers();
 setupDrawerHandlers();
 setupSidebarToggleHandlers();
 setupCursorStarTrail();
+setupClock();
 renderDashboard();

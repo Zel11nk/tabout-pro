@@ -2717,22 +2717,76 @@ header {
 
 .header-left {
   min-width: 220px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .header-left h1 {
-  font-family: var(--display-font);
-  font-size: 30px;
-  font-weight: 600;
-  line-height: 1.08;
+  position: relative;
+  display: inline-block;
+  font-family: "SF Pro Rounded", "SF Pro Display", "Segoe UI Variable Display", "Arial Rounded MT Bold", sans-serif;
+  font-size: 46px;
+  font-weight: 650;
+  line-height: 0.95;
   letter-spacing: 0;
-  text-shadow: 0 1px 10px color-mix(in srgb, var(--paper) 42%, transparent);
+  font-variant-numeric: tabular-nums;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.7px rgba(255, 255, 255, 0.54);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(222, 241, 255, 0.34) 30%,
+    rgba(133, 181, 217, 0.2) 52%,
+    rgba(255, 255, 255, 0.62) 75%,
+    rgba(116, 139, 158, 0.28) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.7))
+    drop-shadow(0 3px 7px rgba(28, 45, 59, 0.2));
+}
+
+.header-left h1::before,
+.header-left h1::after {
+  content: attr(data-time);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-left h1::before {
+  transform: translateY(1px);
+  -webkit-text-stroke: 0.85px rgba(35, 63, 84, 0.32);
+  opacity: 0.72;
+}
+
+.header-left h1::after {
+  transform: translateY(-0.7px);
+  -webkit-text-stroke: 0.65px rgba(255, 255, 255, 0.78);
+  opacity: 0.86;
 }
 
 .header-left .date {
-  margin-top: 7px;
+  margin-top: 5px;
+  display: inline-flex;
+  align-items: center;
+  min-height: auto;
+  padding: 0;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
+  color: var(--ink);
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 40%, transparent);
+  box-shadow: var(--glass-inner-shadow), 0 5px 14px color-mix(in srgb, var(--ink) 8%, transparent);
+  backdrop-filter: blur(var(--glass-control-blur)) saturate(1.45);
+  -webkit-backdrop-filter: blur(var(--glass-control-blur)) saturate(1.45);
 }
 
 .header-center {
@@ -3169,6 +3223,26 @@ header {
   transform: translateX(2px);
 }
 
+.page-chip[draggable="true"] {
+  cursor: grab;
+}
+
+.page-chip[draggable="true"].dragging {
+  opacity: 0.42;
+  cursor: grabbing;
+}
+
+.bookmark-drop-target {
+  position: relative;
+}
+
+.bookmark-drop-target.drop-ready {
+  color: var(--accent-amber);
+  background: color-mix(in srgb, var(--accent-amber) 14%, var(--paper) 16%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-amber) 44%, transparent),
+              inset 0 1px 0 color-mix(in srgb, white 48%, transparent);
+}
+
 .chip-action {
   width: 30px;
   height: 30px;
@@ -3436,7 +3510,7 @@ footer {
   }
 
   .header-left h1 {
-    font-size: 25px;
+    font-size: 38px;
   }
 
   .header-center {

@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tab Out</title>
 
-  <!-- Google Fonts: Newsreader (for headings/numbers) + DM Sans (for body text) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -48,26 +44,63 @@
     <!-- Search component -->
     <div class="header-right">
       <div class="search-container" id="searchContainer">
-        <button class="search-toggle" id="searchToggle" title="Search tabs (Ctrl+K)">
+        <button class="appearance-toggle" id="appearanceToggle" title="Appearance" aria-label="Open appearance settings" aria-expanded="false" aria-controls="appearancePanel">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88a1.125 1.125 0 0 1 1.591 0l3.712 3.712a1.125 1.125 0 0 1 0 1.591l-2.88 2.88M6.75 17.25h.008v.008H6.75v-.008Z" />
+          </svg>
+        </button>
+        <button class="search-toggle" id="searchToggle" title="Search tabs" aria-label="Search open tabs" aria-expanded="false" aria-controls="searchBox">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </button>
-        <div class="search-box" id="searchBox">
+        <div class="search-box" id="searchBox" role="search">
           <input 
             type="text" 
             id="searchInput" 
             placeholder="Search open tabs..." 
             autocomplete="off"
             spellcheck="false"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-controls="searchResults"
+            aria-expanded="false"
           />
-          <button class="search-clear" id="searchClear" style="display:none">
+          <button class="search-clear" id="searchClear" style="display:none" aria-label="Clear search">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-        <div class="search-results" id="searchResults"></div>
+        <div class="search-results" id="searchResults" role="listbox"></div>
+        <div class="appearance-panel" id="appearancePanel" aria-label="Appearance settings" hidden>
+          <div class="appearance-heading">
+            <div>
+              <strong>Appearance</strong>
+              <span>Personalize your space</span>
+            </div>
+          </div>
+          <div class="appearance-row">
+            <button class="appearance-btn" id="chooseBackgroundBtn">Choose image</button>
+            <button class="appearance-btn subtle" id="clearBackgroundBtn">Clear</button>
+            <input type="file" id="backgroundImageInput" accept="image/*" hidden>
+          </div>
+          <label class="appearance-range">
+            <span>Mask</span>
+            <input type="range" id="backgroundMaskRange" min="10" max="85" step="5">
+            <strong id="backgroundMaskValue">45%</strong>
+          </label>
+          <div class="palette-row" id="paletteRow" aria-label="Color palette">
+            <button class="palette-swatch active" data-palette="forest" title="Forest" aria-label="Forest palette"></button>
+            <button class="palette-swatch slate" data-palette="slate" title="Slate" aria-label="Slate palette"></button>
+            <button class="palette-swatch dusk" data-palette="dusk" title="Dusk" aria-label="Dusk palette"></button>
+            <button class="palette-swatch ocean" data-palette="ocean" title="Ocean" aria-label="Ocean palette"></button>
+            <button class="palette-swatch plum" data-palette="plum" title="Plum" aria-label="Plum palette"></button>
+            <button class="palette-swatch graphite" data-palette="graphite" title="Graphite" aria-label="Graphite palette"></button>
+            <button class="palette-swatch mint" data-palette="mint" title="Mint" aria-label="Mint palette"></button>
+            <button class="palette-swatch rosewood" data-palette="rosewood" title="Rosewood" aria-label="Rosewood palette"></button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -147,7 +180,7 @@
     <aside class="bookmarks-sidebar" id="bookmarksSidebar">
       <div class="sidebar-header">
         <div class="sidebar-title">Bookmarks</div>
-        <button class="sidebar-toggle" data-sidebar="bookmarks">
+        <button class="sidebar-toggle" data-sidebar="bookmarks" aria-label="Collapse bookmarks" aria-expanded="true">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
@@ -160,7 +193,7 @@
     <aside class="todo-sidebar collapsed" id="todoSidebar">
       <div class="sidebar-header">
         <div class="sidebar-title">Todo List</div>
-        <button class="sidebar-toggle" data-sidebar="todo">
+        <button class="sidebar-toggle" data-sidebar="todo" aria-label="Expand todo list" aria-expanded="false">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
@@ -237,7 +270,7 @@
      TOAST — floats above everything, used for action confirmations
      Hidden by default via CSS (opacity:0, translateY)
      ================================================================ -->
-<div class="toast" id="toast">
+<div class="toast" id="toast" role="status" aria-live="polite">
   <!-- Checkmark circle icon (Heroicons outline) -->
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />

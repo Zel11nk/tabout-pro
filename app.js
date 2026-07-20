@@ -1,9 +1,9 @@
 /* ================================================================
-   Tab Out — Dashboard App (Pure Extension Edition)
+   Tab Out - Dashboard App (Pure Extension Edition)
 
    This file is the brain of the dashboard. Now that the dashboard
    IS the extension page (not inside an iframe), it can call
-   chrome.tabs and chrome.storage directly — no postMessage bridge needed.
+   chrome.tabs and chrome.storage directly - no postMessage bridge needed.
 
    What this file does:
    1. Reads open browser tabs directly via chrome.tabs.query()
@@ -17,14 +17,167 @@
 
 
 /* ----------------------------------------------------------------
-   CHROME TABS — Direct API Access
+   CHROME TABS - Direct API Access
 
    Since this page IS the extension's new tab page, it has full
    access to chrome.tabs and chrome.storage. No middleman needed.
    ---------------------------------------------------------------- */
 
-// All open tabs — populated by fetchOpenTabs()
+// All open tabs - populated by fetchOpenTabs()
 let openTabs = [];
+
+const DEFAULT_APPEARANCE = {
+  hasBackgroundImage: false,
+  mask: 45,
+  palette: 'forest',
+};
+
+const MAX_BACKGROUND_IMAGE_SIZE = 20 * 1024 * 1024;
+const BACKGROUND_DB_NAME = 'tabOutAppearance';
+const BACKGROUND_DB_STORE = 'images';
+const BACKGROUND_DB_KEY = 'background';
+let currentBackgroundObjectUrl = '';
+
+const PALETTES = {
+  forest: {
+    '--ink': '#1a2f1a',
+    '--paper': '#f8f9f4',
+    '--warm-gray': '#e8e9e2',
+    '--muted': '#6b7b5f',
+    '--accent-amber': '#2d5a27',
+    '--accent-sage': '#4a7c59',
+    '--accent-slate': '#5a6b5e',
+    '--accent-rose': '#c97b7b',
+    '--status-active': '#3d7a4a',
+    '--status-cooling': '#8b7355',
+    '--status-abandoned': '#a85a5a',
+    '--card-bg': 'rgba(var(--bg-mask-rgb), 0.34)',
+    '--on-accent': '#ffffff',
+    '--shadow': 'rgba(45, 90, 39, 0.06)',
+    '--bg-mask-rgb': '248, 249, 244',
+  },
+  slate: {
+    '--ink': '#172330',
+    '--paper': '#f6f7f8',
+    '--warm-gray': '#e2e6ea',
+    '--muted': '#657789',
+    '--accent-amber': '#314151',
+    '--accent-sage': '#667b8d',
+    '--accent-slate': '#536170',
+    '--accent-rose': '#9a6f78',
+    '--status-active': '#4f7f70',
+    '--status-cooling': '#8b7b61',
+    '--status-abandoned': '#9a6f78',
+    '--card-bg': 'rgba(var(--bg-mask-rgb), 0.34)',
+    '--on-accent': '#ffffff',
+    '--shadow': 'rgba(23, 35, 48, 0.07)',
+    '--bg-mask-rgb': '246, 247, 248',
+  },
+  dusk: {
+    '--ink': '#2f211c',
+    '--paper': '#fbf7f2',
+    '--warm-gray': '#eadfd6',
+    '--muted': '#82695d',
+    '--accent-amber': '#684b3f',
+    '--accent-sage': '#9b6a57',
+    '--accent-slate': '#75645e',
+    '--accent-rose': '#a06461',
+    '--status-active': '#7b8061',
+    '--status-cooling': '#9b7654',
+    '--status-abandoned': '#a06461',
+    '--card-bg': 'rgba(var(--bg-mask-rgb), 0.34)',
+    '--on-accent': '#ffffff',
+    '--shadow': 'rgba(104, 75, 63, 0.07)',
+    '--bg-mask-rgb': '251, 247, 242',
+  },
+  ocean: {
+    '--ink': '#122f3d',
+    '--paper': '#f2f8fa',
+    '--warm-gray': '#dce9ed',
+    '--muted': '#5f7b86',
+    '--accent-amber': '#1d6475',
+    '--accent-sage': '#3f8fa0',
+    '--accent-slate': '#587782',
+    '--accent-rose': '#b06f7c',
+    '--status-active': '#3f8a82',
+    '--status-cooling': '#8a7858',
+    '--status-abandoned': '#b06f7c',
+    '--card-bg': 'rgba(var(--bg-mask-rgb), 0.34)',
+    '--on-accent': '#ffffff',
+    '--shadow': 'rgba(18, 47, 61, 0.07)',
+    '--bg-mask-rgb': '242, 248, 250',
+  },
+  plum: {
+    '--ink': '#2d2433',
+    '--paper': '#faf6fb',
+    '--warm-gray': '#eadfec',
+    '--muted': '#79657e',
+    '--accent-amber': '#6d4b75',
+    '--accent-sage': '#8c6796',
+    '--accent-slate': '#6f6277',
+    '--accent-rose': '#b3667e',
+    '--status-active': '#6f8a68',
+    '--status-cooling': '#927250',
+    '--status-abandoned': '#b3667e',
+    '--card-bg': 'rgba(var(--bg-mask-rgb), 0.34)',
+    '--on-accent': '#ffffff',
+    '--shadow': 'rgba(45, 36, 51, 0.07)',
+    '--bg-mask-rgb': '250, 246, 251',
+  },
+  graphite: {
+    '--ink': '#181b1f',
+    '--paper': '#f4f4f2',
+    '--warm-gray': '#deded9',
+    '--muted': '#696d70',
+    '--accent-amber': '#3f464d',
+    '--accent-sage': '#68706c',
+    '--accent-slate': '#565d64',
+    '--accent-rose': '#9b6969',
+    '--status-active': '#61766a',
+    '--status-cooling': '#7b725f',
+    '--status-abandoned': '#9b6969',
+    '--card-bg': 'rgba(var(--bg-mask-rgb), 0.34)',
+    '--on-accent': '#ffffff',
+    '--shadow': 'rgba(24, 27, 31, 0.08)',
+    '--bg-mask-rgb': '244, 244, 242',
+  },
+  mint: {
+    '--ink': '#17352f',
+    '--paper': '#f4fbf7',
+    '--warm-gray': '#dcece3',
+    '--muted': '#5d7e71',
+    '--accent-amber': '#2f705e',
+    '--accent-sage': '#5a9c82',
+    '--accent-slate': '#5e7d75',
+    '--accent-rose': '#bf7474',
+    '--status-active': '#4e9570',
+    '--status-cooling': '#8b7b56',
+    '--status-abandoned': '#bf7474',
+    '--card-bg': 'rgba(var(--bg-mask-rgb), 0.34)',
+    '--on-accent': '#ffffff',
+    '--shadow': 'rgba(23, 53, 47, 0.06)',
+    '--bg-mask-rgb': '244, 251, 247',
+  },
+  rosewood: {
+    '--ink': '#34201f',
+    '--paper': '#fcf6f5',
+    '--warm-gray': '#ecddda',
+    '--muted': '#826664',
+    '--accent-amber': '#7a4540',
+    '--accent-sage': '#a2685f',
+    '--accent-slate': '#776463',
+    '--accent-rose': '#bd6b6b',
+    '--status-active': '#7f805d',
+    '--status-cooling': '#9a744f',
+    '--status-abandoned': '#bd6b6b',
+    '--card-bg': 'rgba(var(--bg-mask-rgb), 0.34)',
+    '--on-accent': '#ffffff',
+    '--shadow': 'rgba(52, 32, 31, 0.07)',
+    '--bg-mask-rgb': '252, 246, 245',
+  },
+};
+
+let currentAppearance = { ...DEFAULT_APPEARANCE };
 
 /**
  * fetchOpenTabs()
@@ -146,8 +299,8 @@ async function focusTab(url) {
  * closeDuplicateTabs(urls, keepOne)
  *
  * Closes duplicate tabs for the given list of URLs.
- * keepOne=true → keep one copy of each, close the rest.
- * keepOne=false → close all copies.
+ * keepOne=true - keep one copy of each, close the rest.
+ * keepOne=false - close all copies.
  */
 async function closeDuplicateTabs(urls, keepOne = true) {
   const allTabs = await chrome.tabs.query({});
@@ -186,7 +339,7 @@ async function closeTabOutDupes() {
 
   if (tabOutTabs.length <= 1) return;
 
-  // Keep the active Tab Out tab in the CURRENT window — that's the one the
+  // Keep the active Tab Out tab in the CURRENT window - that's the one the
   // user is looking at right now. Falls back to any active one, then the first.
   const keep =
     tabOutTabs.find(t => t.active && t.windowId === currentWindow.id) ||
@@ -199,7 +352,7 @@ async function closeTabOutDupes() {
 
 
 /* ----------------------------------------------------------------
-   SAVED FOR LATER — chrome.storage.local
+   SAVED FOR LATER - chrome.storage.local
 
    Replaces the old server-side SQLite + REST API with Chrome's
    built-in key-value storage. Data persists across browser sessions
@@ -292,7 +445,7 @@ async function dismissSavedTab(id) {
  * playCloseSound()
  *
  * Plays a clean "swoosh" sound when tabs are closed.
- * Built entirely with the Web Audio API — no sound files needed.
+ * Built entirely with the Web Audio API - no sound files needed.
  * A filtered noise sweep that descends in pitch, like air moving.
  */
 function playCloseSound() {
@@ -316,7 +469,7 @@ function playCloseSound() {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
 
-    // Bandpass filter sweeps from high to low — creates the "swoosh" character
+    // Bandpass filter sweeps from high to low to create the "swoosh" character.
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
     filter.Q.value = 2.0;
@@ -333,95 +486,69 @@ function playCloseSound() {
 
     setTimeout(() => ctx.close(), 500);
   } catch {
-    // Audio not supported — fail silently
+    // Audio not supported - fail silently.
   }
 }
 
 /**
- * shootConfetti(x, y)
+ * shootClosingStars(x, y)
  *
- * Shoots a burst of colorful confetti particles from the given screen
- * coordinates (typically the center of a card being closed).
- * Pure CSS + JS, no libraries.
+ * Releases a denser burst of silver-blue stars from closed content.
  */
-function shootConfetti(x, y) {
-  const colors = [
-    '#c8713a', // amber
-    '#e8a070', // amber light
-    '#5a7a62', // sage
-    '#8aaa92', // sage light
-    '#5a6b7a', // slate
-    '#8a9baa', // slate light
-    '#d4b896', // warm paper
-    '#b35a5a', // rose
-  ];
+function shootClosingStars(x, y) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  const particleCount = 17;
+  let layer = document.querySelector('.cursor-star-layer');
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.className = 'cursor-star-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(layer);
+  }
+
+  const colors = ['#ffffff', '#eef9ff', '#d7f1ff', '#c6e8ff', '#a9d4f6'];
+  const particleCount = 11 + Math.floor(Math.random() * 5);
 
   for (let i = 0; i < particleCount; i++) {
-    const el = document.createElement('div');
+    const star = document.createElement('span');
+    const drift = -90 + Math.random() * 180;
+    const fall = 48 + Math.random() * 105;
+    const rotation = (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 380);
+    const opacity = 0.8 + Math.random() * 0.2;
 
-    const isCircle = Math.random() > 0.5;
-    const size = 5 + Math.random() * 6; // 5–11px
-    const color = colors[Math.floor(Math.random() * colors.length)];
+    star.className = `cursor-star${Math.random() < 0.34 ? ' is-glint' : ''}`;
+    star.style.left = `${x + (Math.random() - 0.5) * 20}px`;
+    star.style.top = `${y + (Math.random() - 0.5) * 16}px`;
+    star.style.setProperty('--star-size', `${6 + Math.random() * 10}px`);
+    star.style.setProperty('--star-kick-x', `${drift * 0.28}px`);
+    star.style.setProperty('--star-mid-x', `${drift * 0.58}px`);
+    star.style.setProperty('--star-mid-y', `${fall * 0.3}px`);
+    star.style.setProperty('--star-drift', `${drift}px`);
+    star.style.setProperty('--star-fall', `${fall}px`);
+    star.style.setProperty('--star-mid-rotation', `${rotation * 0.45}deg`);
+    star.style.setProperty('--star-rotation', `${rotation}deg`);
+    star.style.setProperty('--star-duration', `${820 + Math.random() * 520}ms`);
+    star.style.setProperty('--star-opacity', String(opacity));
+    star.style.setProperty('--star-mid-opacity', String(opacity * 0.84));
+    star.style.setProperty('--star-glow', `${4 + Math.random() * 3}px`);
+    star.style.setProperty('--star-color', colors[Math.floor(Math.random() * colors.length)]);
 
-    el.style.cssText = `
-      position: fixed;
-      left: ${x}px;
-      top: ${y}px;
-      width: ${size}px;
-      height: ${size}px;
-      background: ${color};
-      border-radius: ${isCircle ? '50%' : '2px'};
-      pointer-events: none;
-      z-index: 9999;
-      transform: translate(-50%, -50%);
-      opacity: 1;
-    `;
-    document.body.appendChild(el);
-
-    // Physics: random angle and speed for the outward burst
-    const angle   = Math.random() * Math.PI * 2;
-    const speed   = 60 + Math.random() * 120;
-    const vx      = Math.cos(angle) * speed;
-    const vy      = Math.sin(angle) * speed - 80; // bias upward
-    const gravity = 200;
-
-    const startTime = performance.now();
-    const duration  = 700 + Math.random() * 200; // 700–900ms
-
-    function frame(now) {
-      const elapsed  = (now - startTime) / 1000;
-      const progress = elapsed / (duration / 1000);
-
-      if (progress >= 1) { el.remove(); return; }
-
-      const px = vx * elapsed;
-      const py = vy * elapsed + 0.5 * gravity * elapsed * elapsed;
-      const opacity = progress < 0.5 ? 1 : 1 - (progress - 0.5) * 2;
-      const rotate  = elapsed * 200 * (isCircle ? 0 : 1);
-
-      el.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) rotate(${rotate}deg)`;
-      el.style.opacity = opacity;
-
-      requestAnimationFrame(frame);
-    }
-
-    requestAnimationFrame(frame);
+    layer.appendChild(star);
+    star.addEventListener('animationend', () => star.remove(), { once: true });
   }
 }
 
 /**
  * animateCardOut(card)
  *
- * Smoothly removes a mission card: fade + scale down, then confetti.
+ * Smoothly removes a mission card: fade + scale down, then stars.
  * After the animation, checks if the grid is now empty.
  */
 function animateCardOut(card) {
   if (!card) return;
 
   const rect = card.getBoundingClientRect();
-  shootConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  shootClosingStars(rect.left + rect.width / 2, rect.top + rect.height / 2);
 
   card.classList.add('closing');
   setTimeout(() => {
@@ -474,7 +601,7 @@ function checkAndShowEmptyState() {
  * timeAgo(dateStr)
  *
  * Converts an ISO date string into a human-friendly relative time.
- * "2026-04-04T10:00:00Z" → "2 hrs ago" or "yesterday"
+ * "2026-04-04T10:00:00Z" becomes "2 hrs ago" or "yesterday".
  */
 function timeAgo(dateStr) {
   if (!dateStr) return '';
@@ -492,7 +619,7 @@ function timeAgo(dateStr) {
 }
 
 /**
- * getGreeting() — "Good morning / afternoon / evening"
+ * getGreeting() - "Good morning / afternoon / evening"
  */
 function getGreeting() {
   const hour = new Date().getHours();
@@ -502,7 +629,7 @@ function getGreeting() {
 }
 
 /**
- * getDateDisplay() — "Friday, April 4, 2026"
+ * getDateDisplay() - "Friday, April 4, 2026"
  */
 function getDateDisplay() {
   return new Date().toLocaleDateString('en-US', {
@@ -518,7 +645,7 @@ function getDateDisplay() {
    DOMAIN & TITLE CLEANUP HELPERS
    ---------------------------------------------------------------- */
 
-// Map of known hostnames → friendly display names.
+// Map of known hostnames to friendly display names.
 const FRIENDLY_DOMAINS = {
   'github.com':           'GitHub',
   'www.github.com':       'GitHub',
@@ -631,7 +758,7 @@ function cleanTitle(title, hostname) {
 
   const friendly = friendlyDomain(hostname);
   const domain   = hostname.replace(/^www\./, '');
-  const seps     = [' - ', ' | ', ' — ', ' · ', ' – '];
+  const seps     = [' - ', ' | ', ' \u2014 ', ' · ', ' \u2013 '];
 
   for (const sep of seps) {
     const idx = title.lastIndexOf(sep);
@@ -671,7 +798,7 @@ function smartTitle(title, url) {
       const [owner, repo, ...rest] = parts;
       if (rest[0] === 'issues' && rest[1]) return `${owner}/${repo} Issue #${rest[1]}`;
       if (rest[0] === 'pull'   && rest[1]) return `${owner}/${repo} PR #${rest[1]}`;
-      if (rest[0] === 'blob' || rest[0] === 'tree') return `${owner}/${repo} — ${rest.slice(2).join('/')}`;
+      if (rest[0] === 'blob' || rest[0] === 'tree') return `${owner}/${repo} - ${rest.slice(2).join('/')}`;
       if (titleIsUrl) return `${owner}/${repo}`;
     }
   }
@@ -700,7 +827,7 @@ function smartTitle(title, url) {
 const FAVICON_SERVICES = [
   // 1. 首先尝试直接访问网站 favicon
   (domain) => `https://${domain}/favicon.ico`,
-  // 2. 使用国内 CDN 提供的 favicon 服务
+  // 2. 使用国内 CDN 提供 favicon 服务
   (domain) => `https://api.icon.kitchen/${domain}.png`,
   // 3. 使用 favicon.im 服务（速度快）
   (domain) => `https://favicon.im/${domain}`,
@@ -740,7 +867,7 @@ let domainGroups = [];
 /**
  * getRealTabs()
  *
- * Returns tabs that are real web pages — no chrome://, extension
+ * Returns tabs that are real web pages - no chrome:// or extension pages.
  * pages, about:blank, etc.
  */
 function getRealTabs() {
@@ -843,7 +970,7 @@ function renderDomainCard(group) {
   </span>`;
 
   const dupeBadge = hasDupes
-    ? `<span class="open-tabs-badge" style="color:var(--accent-amber);background:rgba(200,113,58,0.08);">
+    ? `<span class="open-tabs-badge duplicate">
         ${totalExtras} duplicate${totalExtras !== 1 ? 's' : ''}
       </span>`
     : '';
@@ -922,7 +1049,7 @@ function renderDomainCard(group) {
 
 
 /* ----------------------------------------------------------------
-   SAVED FOR LATER — Render Checklist Column
+   SAVED FOR LATER - Render Checklist Column
    ---------------------------------------------------------------- */
 
 /**
@@ -946,62 +1073,19 @@ async function renderBookmarksSidebar() {
 
     sidebar.style.display = 'flex';
 
-    const validGroups = bookmarkGroups.filter(g => g.bookmarks && g.bookmarks.length > 0);
+    const validGroups = bookmarkGroups.filter(hasBookmarkContent);
     
     if (validGroups.length === 0) {
       sidebar.style.display = 'none';
       return;
     }
 
-    sidebarContent.innerHTML = validGroups.map(group => {
-      const sanitizedBookmarks = group.bookmarks.filter(b => b && b.url && typeof b.url === 'string');
-      
-      if (sanitizedBookmarks.length === 0) return '';
+    const openTimes = getBookmarkOpenTimes();
+    const sortedGroups = sortBookmarkGroups(validGroups, openTimes, { keepRootLast: true });
 
-      const bookmarksHtml = sanitizedBookmarks.map(bookmark => {
-        let domain = '';
-        let faviconUrl = '';
-        try {
-          const parsed = new URL(bookmark.url);
-          domain = parsed.hostname.replace(/^www\./, '');
-          faviconUrl = getFaviconUrl(domain);
-        } catch (urlErr) {
-          console.warn('[tab-out] Invalid bookmark URL:', bookmark.url);
-        }
-
-        const title = bookmark.title || bookmark.url || 'Untitled';
-        const safeUrl = (bookmark.url || '').replace(/"/g, '&quot;');
-        const safeTitle = title.replace(/"/g, '&quot;');
-
-        return `
-          <button class="drawer-bookmark" data-action="open-bookmark" data-bookmark-url="${safeUrl}" title="${safeTitle}">
-            ${faviconUrl ? `<img class="drawer-bookmark-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
-            <div class="drawer-bookmark-content">
-              <span class="drawer-bookmark-title">${title}</span>
-              <span class="drawer-bookmark-domain">${domain}</span>
-            </div>
-          </button>`;
-      }).join('');
-
-      const isHiddenGroup = validGroups.length === 1 && group.name === '4tab-out';
-
-      return `
-        <div class="drawer-group" data-group-name="${group.name.replace(/"/g, '&quot;')}">
-          ${!isHiddenGroup ? `
-            <div class="drawer-group-header" data-group-name="${group.name.replace(/"/g, '&quot;')}">
-              <span class="drawer-group-name">${group.name}</span>
-              <span class="drawer-group-count">${sanitizedBookmarks.length}</span>
-              <button class="drawer-group-toggle" data-group-name="${group.name.replace(/"/g, '&quot;')}">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-              </button>
-            </div>
-          ` : ''}
-          <div class="drawer-group-content" style="display: none;">
-            ${bookmarksHtml}
-          </div>
-        </div>`;
+    sidebarContent.innerHTML = sortedGroups.map((group, index) => {
+      const hideHeader = validGroups.length === 1 && group.isRoot;
+      return renderBookmarkGroup(group, { depth: 0, path: `${index}`, hideHeader });
     }).join('');
 
     setupGroupToggleHandlers();
@@ -1009,6 +1093,137 @@ async function renderBookmarksSidebar() {
     console.error('[tab-out] Failed to load bookmarks:', err);
     sidebar.style.display = 'none';
   }
+}
+
+function hasBookmarkContent(group) {
+  return getBookmarkCount(group) > 0;
+}
+
+function getBookmarkCount(group) {
+  const directCount = (group.bookmarks || []).filter(b => b && b.url && typeof b.url === 'string').length;
+  const childCount = (group.children || []).reduce((sum, child) => sum + getBookmarkCount(child), 0);
+  return directCount + childCount;
+}
+
+function getBookmarkOpenTimes() {
+  try {
+    return JSON.parse(localStorage.getItem('bookmarkOpenTimes') || '{}');
+  } catch (err) {
+    console.warn('[tab-out] Failed to parse bookmark open times:', err);
+    return {};
+  }
+}
+
+function getGroupLastOpenTime(group, openTimes) {
+  const directTime = (group.bookmarks || []).reduce((latest, bookmark) => {
+    if (!bookmark || !bookmark.url) return latest;
+    return Math.max(latest, openTimes[bookmark.url] || 0);
+  }, 0);
+
+  const childTime = (group.children || []).reduce((latest, child) => {
+    return Math.max(latest, getGroupLastOpenTime(child, openTimes));
+  }, 0);
+
+  return Math.max(directTime, childTime);
+}
+
+function sortBookmarkGroups(groups, openTimes, { keepRootLast = false } = {}) {
+  return groups
+    .map((group, index) => ({ group, index }))
+    .sort((a, b) => {
+      if (keepRootLast && a.group.isRoot !== b.group.isRoot) {
+        return a.group.isRoot ? 1 : -1;
+      }
+
+      const timeDiff = getGroupLastOpenTime(b.group, openTimes) - getGroupLastOpenTime(a.group, openTimes);
+      return timeDiff || a.index - b.index;
+    })
+    .map(item => item.group);
+}
+
+function renderBookmarkGroup(group, { depth, path, hideHeader = false }) {
+  const count = getBookmarkCount(group);
+  if (count === 0) return '';
+
+  const isOpen = hideHeader;
+  const groupName = group.name || 'Untitled folder';
+  const safeGroupName = escapeHtml(groupName);
+
+  const headerHtml = hideHeader ? '' : `
+    <div class="drawer-group-header" aria-expanded="${isOpen ? 'true' : 'false'}">
+      <span class="drawer-group-name">${safeGroupName}</span>
+      <span class="drawer-group-count">${count}</span>
+      <button class="drawer-group-toggle" type="button" aria-label="Toggle ${escapeAttr(groupName)}">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+    </div>`;
+
+  const bookmarksHtml = renderBookmarkItems(group.bookmarks || []);
+  const openTimes = getBookmarkOpenTimes();
+  const sortedChildren = sortBookmarkGroups(
+    (group.children || []).filter(hasBookmarkContent),
+    openTimes
+  );
+  const childrenHtml = sortedChildren
+    .map((child, index) => renderBookmarkGroup(child, {
+      depth: depth + 1,
+      path: `${path}-${index}`,
+      hideHeader: false
+    }))
+    .join('');
+
+  return `
+    <div class="drawer-group ${depth > 0 ? 'drawer-subgroup' : ''}" data-group-path="${path}">
+      ${headerHtml}
+      <div class="drawer-group-content" ${isOpen ? '' : 'hidden'}>
+        ${childrenHtml}
+        ${bookmarksHtml}
+      </div>
+    </div>`;
+}
+
+function renderBookmarkItems(bookmarks) {
+  const openTimes = getBookmarkOpenTimes();
+  const sanitizedBookmarks = bookmarks
+    .filter(b => b && b.url && typeof b.url === 'string')
+    .slice()
+    .sort((a, b) => {
+      const timeA = openTimes[a.url] || 0;
+      const timeB = openTimes[b.url] || 0;
+      return timeB - timeA;
+    });
+
+  return sanitizedBookmarks.map(bookmark => {
+    let domain = '';
+    let faviconUrl = '';
+    try {
+      const parsed = new URL(bookmark.url);
+      domain = parsed.hostname.replace(/^www\./, '');
+      faviconUrl = getFaviconUrl(domain);
+    } catch (urlErr) {
+      console.warn('[tab-out] Invalid bookmark URL:', bookmark.url);
+    }
+
+    const title = bookmark.title || bookmark.url || 'Untitled';
+    const safeUrl = escapeAttr(bookmark.url || '');
+    const safeTitle = escapeAttr(title);
+    const safeDomain = escapeHtml(domain);
+
+    return `
+      <button class="drawer-bookmark" data-action="open-bookmark" data-bookmark-url="${safeUrl}" title="${safeTitle}">
+        ${faviconUrl ? `<img class="drawer-bookmark-favicon" src="${escapeAttr(faviconUrl)}" alt="" data-favicon data-domain="${escapeAttr(domain)}">` : ''}
+        <div class="drawer-bookmark-content">
+          <span class="drawer-bookmark-title">${escapeHtml(title)}</span>
+          <span class="drawer-bookmark-domain">${safeDomain}</span>
+        </div>
+      </button>`;
+  }).join('');
+}
+
+function escapeAttr(value) {
+  return escapeHtml(String(value ?? '')).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 /**
@@ -1019,14 +1234,14 @@ async function renderBookmarksSidebar() {
 function setupGroupToggleHandlers() {
   document.querySelectorAll('.drawer-group-header').forEach(header => {
     header.addEventListener('click', (e) => {
-      const groupName = header.dataset.groupName;
       const content = header.nextElementSibling;
       const toggle = header.querySelector('.drawer-group-toggle');
       
       if (content && toggle) {
-        const isOpen = content.style.display !== 'none';
-        content.style.display = isOpen ? 'none' : 'block';
-        toggle.classList.toggle('open');
+        const isOpen = !content.hidden;
+        content.hidden = isOpen;
+        header.setAttribute('aria-expanded', String(!isOpen));
+        toggle.classList.toggle('open', !isOpen);
       }
     });
   });
@@ -1057,13 +1272,13 @@ async function getAllBookmarks() {
       console.log('[tab-out] Got bookmarks tree');
       
       // Extract bookmarks only from "4tab-out" folder
-      const groups = [];
+      let groups = [];
       
       function findOtherBookmarks(nodes) {
         for (const node of nodes) {
           if (node.title === '4tab-out' && node.children) {
             // Found the 4tab-out folder
-            extractGroupsFromFolder(node.children, '');
+            groups = buildBookmarkGroups(node.children);
             return true;
           }
           if (node.children) {
@@ -1075,23 +1290,46 @@ async function getAllBookmarks() {
         return false;
       }
       
-      function extractGroupsFromFolder(nodes, parentName) {
+      function buildBookmarkGroups(nodes) {
+        const rootBookmarks = [];
+        const folderGroups = [];
+
+        // Keep the browser bookmark tree order while preserving nested folders.
         for (const node of nodes) {
           if (node.url) {
-            // This is a bookmark item
-            const groupName = parentName || '4tab-out';
-            let group = groups.find(g => g.name === groupName);
-            if (!group) {
-              group = { name: groupName, bookmarks: [] };
-              groups.push(group);
-            }
-            group.bookmarks.push(node);
+            rootBookmarks.push(node);
           } else if (node.children && node.title) {
-            // This is a subfolder
-            const folderName = parentName ? `${parentName} / ${node.title}` : node.title;
-            extractGroupsFromFolder(node.children, folderName);
+            const group = buildBookmarkFolder(node);
+            if (hasBookmarkContent(group)) {
+              folderGroups.push(group);
+            }
           }
         }
+
+        return rootBookmarks.length > 0
+          ? [...folderGroups, { name: '4tab-out', bookmarks: rootBookmarks, children: [], isRoot: true }]
+          : folderGroups;
+      }
+
+      function buildBookmarkFolder(folderNode) {
+        const group = {
+          name: folderNode.title || 'Untitled folder',
+          bookmarks: [],
+          children: []
+        };
+
+        for (const node of folderNode.children || []) {
+          if (node.url) {
+            group.bookmarks.push(node);
+          } else if (node.children && node.title) {
+            const childGroup = buildBookmarkFolder(node);
+            if (hasBookmarkContent(childGroup)) {
+              group.children.push(childGroup);
+            }
+          }
+        }
+
+        return group;
       }
       
       findOtherBookmarks(tree);
@@ -1431,7 +1669,7 @@ async function renderDashboard() {
 
 
 /* ----------------------------------------------------------------
-   EVENT HANDLERS — using event delegation
+   EVENT HANDLERS - using event delegation
 
    One listener on document handles ALL button clicks.
    Think of it as one security guard watching the whole building
@@ -1491,6 +1729,8 @@ document.addEventListener('click', async (e) => {
     playCloseSound();
     const banner = document.getElementById('tabOutDupeBanner');
     if (banner) {
+      const rect = banner.getBoundingClientRect();
+      shootClosingStars(rect.left + rect.width / 2, rect.top + rect.height / 2);
       banner.style.transition = 'opacity 0.4s';
       banner.style.opacity = '0';
       setTimeout(() => { banner.style.display = 'none'; banner.style.opacity = '1'; }, 400);
@@ -1522,7 +1762,12 @@ document.addEventListener('click', async (e) => {
   if (action === 'open-bookmark') {
     const url = actionEl.dataset.bookmarkUrl;
     if (!url) return;
-    
+
+    // Record the open time for sorting
+    const openTimes = getBookmarkOpenTimes();
+    openTimes[url] = Date.now();
+    localStorage.setItem('bookmarkOpenTimes', JSON.stringify(openTimes));
+
     await chrome.tabs.create({ url: url });
     showToast('Bookmark opened');
     return;
@@ -1546,7 +1791,7 @@ document.addEventListener('click', async (e) => {
     const chip = actionEl.closest('.page-chip');
     if (chip) {
       const rect = chip.getBoundingClientRect();
-      shootConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      shootClosingStars(rect.left + rect.width / 2, rect.top + rect.height / 2);
       chip.style.transition = 'opacity 0.2s, transform 0.2s';
       chip.style.opacity    = '0';
       chip.style.transform  = 'scale(0.8)';
@@ -1713,6 +1958,8 @@ document.addEventListener('click', async (e) => {
 
     await closeDuplicateTabs(urls, true);
     playCloseSound();
+    const rect = actionEl.getBoundingClientRect();
+    shootClosingStars(rect.left + rect.width / 2, rect.top + rect.height / 2);
 
     // Hide the dedup button
     actionEl.style.transition = 'opacity 0.2s';
@@ -1750,10 +1997,6 @@ document.addEventListener('click', async (e) => {
     playCloseSound();
 
     document.querySelectorAll('#openTabsMissions .mission-card').forEach(c => {
-      shootConfetti(
-        c.getBoundingClientRect().left + c.offsetWidth / 2,
-        c.getBoundingClientRect().top  + c.offsetHeight / 2
-      );
       animateCardOut(c);
     });
 
@@ -1762,7 +2005,7 @@ document.addEventListener('click', async (e) => {
   }
 });
 
-// ---- Archive toggle — expand/collapse the archive section ----
+// ---- Archive toggle - expand/collapse the archive section ----
 document.addEventListener('click', (e) => {
   const toggle = e.target.closest('#archiveToggle');
   if (!toggle) return;
@@ -1934,9 +2177,12 @@ function showEditTodoModal(todo) {
     modal = document.createElement('div');
     modal.id = 'todoEditModal';
     modal.className = 'todo-edit-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'todoEditTitle');
     modal.innerHTML = `
       <div class="todo-edit-content">
-        <div class="todo-edit-title">Edit Todo</div>
+        <div class="todo-edit-title" id="todoEditTitle">Edit Todo</div>
         <form class="todo-edit-form" id="todoEditForm">
           <input type="hidden" id="todoEditId">
           <input type="text" id="todoEditText" class="todo-edit-input" placeholder="Todo text">
@@ -2041,7 +2287,7 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ---- Archive search — filter archived items as user types ----
+// ---- Archive search - filter archived items as user types ----
 document.addEventListener('input', async (e) => {
   if (e.target.id !== 'archiveSearch') return;
 
@@ -2097,7 +2343,7 @@ function setupFaviconErrorHandlers() {
           domain = url.hostname;
           target.setAttribute('data-domain', domain);
         } catch (err) {
-          // 无法提取域名，隐藏图片
+          // 无法提取域名，隐藏图标
           target.style.display = 'none';
           return;
         }
@@ -2150,27 +2396,25 @@ function setupDrawerHandlers() {
 }
 
 function setupSidebarToggleHandlers() {
-  // Bookmarks sidebar toggle
-  const bookmarksHeader = document.querySelector('#bookmarksSidebar .sidebar-header');
-  if (bookmarksHeader) {
-    bookmarksHeader.addEventListener('click', () => {
-      const sidebar = document.getElementById('bookmarksSidebar');
-      if (sidebar) {
-        sidebar.classList.toggle('collapsed');
-      }
-    });
-  }
+  const setupToggle = (sidebarId, label) => {
+    const sidebar = document.getElementById(sidebarId);
+    const header = sidebar?.querySelector('.sidebar-header');
+    const button = sidebar?.querySelector('.sidebar-toggle');
+    if (!sidebar || !header || !button) return;
 
-  // Todo sidebar toggle
-  const todoHeader = document.querySelector('#todoSidebar .sidebar-header');
-  if (todoHeader) {
-    todoHeader.addEventListener('click', () => {
-      const sidebar = document.getElementById('todoSidebar');
-      if (sidebar) {
-        sidebar.classList.toggle('collapsed');
-      }
+    const startsExpanded = !sidebar.classList.contains('collapsed');
+    button.setAttribute('aria-expanded', String(startsExpanded));
+    button.setAttribute('aria-label', `${startsExpanded ? 'Collapse' : 'Expand'} ${label}`);
+
+    header.addEventListener('click', () => {
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      button.setAttribute('aria-expanded', String(!isCollapsed));
+      button.setAttribute('aria-label', `${isCollapsed ? 'Expand' : 'Collapse'} ${label}`);
     });
-  }
+  };
+
+  setupToggle('bookmarksSidebar', 'bookmarks');
+  setupToggle('todoSidebar', 'todo list');
 }
 
 /* ----------------------------------------------------------------
@@ -2183,13 +2427,14 @@ function setupSidebarToggleHandlers() {
  * Sets up the tab search functionality.
  */
 function setupSearchHandlers() {
+  const searchContainer = document.getElementById('searchContainer');
   const searchToggle = document.getElementById('searchToggle');
   const searchBox = document.getElementById('searchBox');
   const searchInput = document.getElementById('searchInput');
   const searchClear = document.getElementById('searchClear');
   const searchResults = document.getElementById('searchResults');
 
-  if (!searchToggle || !searchBox || !searchInput || !searchClear || !searchResults) {
+  if (!searchContainer || !searchToggle || !searchBox || !searchInput || !searchClear || !searchResults) {
     return;
   }
 
@@ -2205,6 +2450,7 @@ function setupSearchHandlers() {
   // Clear button
   searchClear.addEventListener('click', () => {
     searchInput.value = '';
+    searchInput.setAttribute('aria-expanded', 'false');
     searchClear.style.display = 'none';
     searchResults.innerHTML = '';
     searchResults.classList.remove('open');
@@ -2218,6 +2464,7 @@ function setupSearchHandlers() {
       searchClear.style.display = 'flex';
       performSearch(query);
     } else {
+      searchInput.setAttribute('aria-expanded', 'false');
       searchClear.style.display = 'none';
       searchResults.innerHTML = '';
       searchResults.classList.remove('open');
@@ -2245,7 +2492,7 @@ function setupSearchHandlers() {
         }
         break;
       case 'Escape':
-        closeSearch();
+        closeSearch(true);
         break;
     }
   });
@@ -2263,7 +2510,7 @@ function setupSearchHandlers() {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
       if (searchBox.style.display === 'flex') {
-        closeSearch();
+        closeSearch(true);
       } else {
         openSearch();
       }
@@ -2279,9 +2526,14 @@ function setupSearchHandlers() {
 function openSearch() {
   const searchBox = document.getElementById('searchBox');
   const searchInput = document.getElementById('searchInput');
+  const searchToggle = document.getElementById('searchToggle');
+
+  setAppearancePanelOpen(false);
   
   searchBox.style.display = 'flex';
   searchBox.classList.add('focused');
+  searchToggle?.setAttribute('aria-expanded', 'true');
+  searchInput.setAttribute('aria-expanded', 'false');
   searchInput.focus();
 }
 
@@ -2290,18 +2542,22 @@ function openSearch() {
  *
  * Closes the search box and clears results.
  */
-function closeSearch() {
+function closeSearch(restoreFocus = false) {
   const searchBox = document.getElementById('searchBox');
   const searchInput = document.getElementById('searchInput');
   const searchClear = document.getElementById('searchClear');
   const searchResults = document.getElementById('searchResults');
+  const searchToggle = document.getElementById('searchToggle');
   
   searchBox.style.display = 'none';
   searchBox.classList.remove('focused');
+  searchToggle?.setAttribute('aria-expanded', 'false');
+  searchInput.setAttribute('aria-expanded', 'false');
   searchInput.value = '';
   searchClear.style.display = 'none';
   searchResults.innerHTML = '';
   searchResults.classList.remove('open');
+  if (restoreFocus) searchToggle?.focus();
 }
 
 /**
@@ -2315,6 +2571,7 @@ async function performSearch(query) {
   if (!query || !searchResults) {
     searchResults.innerHTML = '';
     searchResults.classList.remove('open');
+    document.getElementById('searchInput')?.setAttribute('aria-expanded', 'false');
     return;
   }
 
@@ -2339,10 +2596,10 @@ async function performSearch(query) {
     searchResults.innerHTML = `
       <div class="search-no-results">
         No tabs found matching "${query}"
-        <div class="search-shortcut">Press <kbd>Esc</kbd> to close</div>
       </div>
     `;
     searchResults.classList.add('open');
+    document.getElementById('searchInput')?.setAttribute('aria-expanded', 'true');
     return;
   }
 
@@ -2366,6 +2623,8 @@ async function performSearch(query) {
     return `
       <div 
         class="search-result-item ${isActive ? 'active' : ''}" 
+        role="option"
+        aria-selected="${isActive ? 'true' : 'false'}"
         data-tab-id="${tab.id}"
         data-tab-url="${(tab.url || '').replace(/"/g, '&quot;')}"
         title="${(tab.title || tab.url || '').replace(/"/g, '&quot;')}"
@@ -2380,6 +2639,7 @@ async function performSearch(query) {
   }).join('');
 
   searchResults.classList.add('open');
+  document.getElementById('searchInput')?.setAttribute('aria-expanded', 'true');
 
   // Add click handlers to results
   searchResults.querySelectorAll('.search-result-item').forEach(item => {
@@ -2435,7 +2695,9 @@ function navigateSearchResults(items, direction) {
   if (newIndex >= items.length) newIndex = 0;
   
   items.forEach((item, index) => {
-    item.classList.toggle('active', index === newIndex);
+    const isActive = index === newIndex;
+    item.classList.toggle('active', isActive);
+    item.setAttribute('aria-selected', String(isActive));
   });
   
   // Scroll to active item
@@ -2472,11 +2734,334 @@ async function activateSearchResult(item) {
 }
 
 /* ----------------------------------------------------------------
+   APPEARANCE FUNCTIONS
+   ---------------------------------------------------------------- */
+
+function applyAppearance(settings) {
+  currentAppearance = { ...DEFAULT_APPEARANCE, ...settings };
+
+  const palette = PALETTES[currentAppearance.palette] || PALETTES.forest;
+  for (const [name, value] of Object.entries(palette)) {
+    document.documentElement.style.setProperty(name, value);
+  }
+
+  document.documentElement.style.setProperty('--bg-mask-opacity', String(currentAppearance.mask / 100));
+
+  syncAppearanceControls();
+}
+
+function syncAppearanceControls() {
+  const maskRange = document.getElementById('backgroundMaskRange');
+  const maskValue = document.getElementById('backgroundMaskValue');
+
+  if (maskRange) maskRange.value = String(currentAppearance.mask);
+  if (maskValue) maskValue.textContent = `${currentAppearance.mask}%`;
+
+  document.querySelectorAll('.palette-swatch').forEach(button => {
+    const isActive = button.dataset.palette === currentAppearance.palette;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
+}
+
+async function saveAppearance(partial) {
+  currentAppearance = { ...currentAppearance, ...partial };
+  for (const key of Object.keys(currentAppearance)) {
+    if (currentAppearance[key] === undefined) delete currentAppearance[key];
+  }
+  await chrome.storage.local.set({ tabOutAppearance: currentAppearance });
+  applyAppearance(currentAppearance);
+}
+
+function openBackgroundDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(BACKGROUND_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(BACKGROUND_DB_STORE);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function withBackgroundStore(mode, callback) {
+  const db = await openBackgroundDb();
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(BACKGROUND_DB_STORE, mode);
+      const store = tx.objectStore(BACKGROUND_DB_STORE);
+      const request = callback(store);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function saveBackgroundFile(file) {
+  await withBackgroundStore('readwrite', store => store.put({
+    blob: file,
+    type: file.type,
+    name: file.name,
+    updatedAt: Date.now(),
+  }, BACKGROUND_DB_KEY));
+}
+
+async function loadBackgroundFile() {
+  const record = await withBackgroundStore('readonly', store => store.get(BACKGROUND_DB_KEY));
+  return record && record.blob ? record.blob : null;
+}
+
+async function clearBackgroundFile() {
+  await withBackgroundStore('readwrite', store => store.delete(BACKGROUND_DB_KEY));
+}
+
+function applyBackgroundUrl(url) {
+  if (currentBackgroundObjectUrl && currentBackgroundObjectUrl.startsWith('blob:')) {
+    URL.revokeObjectURL(currentBackgroundObjectUrl);
+  }
+
+  currentBackgroundObjectUrl = url || '';
+
+  if (url) {
+    document.body.classList.add('has-custom-background');
+    document.body.style.backgroundImage = `url("${url}")`;
+  } else {
+    document.body.classList.remove('has-custom-background');
+    document.body.style.removeProperty('background-image');
+    document.body.style.removeProperty('--custom-bg-image');
+  }
+}
+
+async function restoreBackgroundImage(settings) {
+  if (settings && typeof settings.backgroundImage === 'string' && settings.backgroundImage.startsWith('data:')) {
+    try {
+      const response = await fetch(settings.backgroundImage);
+      const blob = await response.blob();
+      await saveBackgroundFile(blob);
+      delete currentAppearance.backgroundImage;
+      await saveAppearance({ hasBackgroundImage: true, backgroundImage: undefined });
+      applyBackgroundUrl(URL.createObjectURL(blob));
+      return;
+    } catch {
+      delete currentAppearance.backgroundImage;
+      await saveAppearance({ hasBackgroundImage: false, backgroundImage: undefined });
+    }
+  }
+
+  if (!settings || !settings.hasBackgroundImage) {
+    applyBackgroundUrl('');
+    return;
+  }
+
+  const blob = await loadBackgroundFile();
+  if (!blob) {
+    await saveAppearance({ hasBackgroundImage: false });
+    applyBackgroundUrl('');
+    return;
+  }
+
+  applyBackgroundUrl(URL.createObjectURL(blob));
+}
+
+function setAppearancePanelOpen(isOpen, restoreFocus = false) {
+  const panel = document.getElementById('appearancePanel');
+  const toggle = document.getElementById('appearanceToggle');
+  if (!panel || !toggle) return;
+
+  panel.hidden = !isOpen;
+  toggle.classList.toggle('active', isOpen);
+  toggle.setAttribute('aria-expanded', String(isOpen));
+  if (!isOpen && restoreFocus) toggle.focus();
+}
+
+async function setupAppearanceHandlers() {
+  const panel = document.getElementById('appearancePanel');
+  const toggle = document.getElementById('appearanceToggle');
+  const chooseBtn = document.getElementById('chooseBackgroundBtn');
+  const clearBtn = document.getElementById('clearBackgroundBtn');
+  const input = document.getElementById('backgroundImageInput');
+  const maskRange = document.getElementById('backgroundMaskRange');
+  const paletteRow = document.getElementById('paletteRow');
+
+  if (!panel || !toggle || !chooseBtn || !clearBtn || !input || !maskRange || !paletteRow) return;
+
+  const { tabOutAppearance } = await chrome.storage.local.get('tabOutAppearance');
+  applyAppearance(tabOutAppearance || DEFAULT_APPEARANCE);
+  await restoreBackgroundImage(currentAppearance);
+
+  toggle.addEventListener('click', () => {
+    const shouldOpen = panel.hidden;
+    if (shouldOpen) closeSearch();
+    setAppearancePanelOpen(shouldOpen);
+  });
+
+  chooseBtn.addEventListener('click', () => input.click());
+
+  input.addEventListener('change', async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    if (file.size > MAX_BACKGROUND_IMAGE_SIZE) {
+      showToast('Choose an image under 20MB');
+      input.value = '';
+      return;
+    }
+
+    try {
+      await saveBackgroundFile(file);
+      applyBackgroundUrl(URL.createObjectURL(file));
+      await saveAppearance({ hasBackgroundImage: true });
+      showToast('Background updated');
+    } catch {
+      showToast('Background update failed');
+    }
+
+    input.value = '';
+  });
+
+  clearBtn.addEventListener('click', async () => {
+    await clearBackgroundFile();
+    applyBackgroundUrl('');
+    await saveAppearance({ hasBackgroundImage: false });
+    showToast('Background cleared');
+  });
+
+  maskRange.addEventListener('input', async (e) => {
+    await saveAppearance({ mask: Number(e.target.value) });
+  });
+
+  paletteRow.addEventListener('click', async (e) => {
+    const button = e.target.closest('.palette-swatch');
+    if (!button) return;
+    await saveAppearance({ palette: button.dataset.palette || 'forest' });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (panel.hidden || panel.contains(e.target) || toggle.contains(e.target)) return;
+    setAppearancePanelOpen(false);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || panel.hidden) return;
+    setAppearancePanelOpen(false, true);
+  });
+}
+
+function setupCursorStarTrail() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const layer = document.createElement('div');
+  layer.className = 'cursor-star-layer';
+  layer.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(layer);
+
+  const colors = ['#ffffff', '#ffffff', '#f2fbff', '#d7f1ff', '#c6e8ff', '#a9d4f6'];
+  const activeStars = new Set();
+  const hoverTimes = new WeakMap();
+  let lastX = -100;
+  let lastY = -100;
+  let lastSpawn = 0;
+
+  const createStar = (x, y, velocityX = 0) => {
+    if (activeStars.size >= 72) return;
+
+    const star = document.createElement('span');
+    const isGlint = Math.random() < 0.28;
+    const size = 5 + Math.pow(Math.random(), 1.7) * 9;
+    const inheritedVelocity = Math.max(-60, Math.min(60, velocityX));
+    const kickX = inheritedVelocity * 0.08 + (Math.random() - 0.5) * 8;
+    const drift = inheritedVelocity * 0.18 + (Math.random() - 0.5) * 42;
+    const fall = 42 + Math.random() * 70;
+    const midX = drift * (0.35 + Math.random() * 0.2) + (Math.random() - 0.5) * 9;
+    const midY = fall * (0.25 + Math.random() * 0.12);
+    const rotation = (Math.random() > 0.5 ? 1 : -1) * (120 + Math.random() * 300);
+    const duration = 780 + Math.random() * 680;
+    const opacity = 0.76 + Math.random() * 0.24;
+
+    star.className = `cursor-star${isGlint ? ' is-glint' : ''}`;
+    star.style.left = `${x + (Math.random() - 0.5) * 12}px`;
+    star.style.top = `${y + (Math.random() - 0.5) * 10}px`;
+    star.style.setProperty('--star-size', `${size}px`);
+    star.style.setProperty('--star-kick-x', `${kickX}px`);
+    star.style.setProperty('--star-mid-x', `${midX}px`);
+    star.style.setProperty('--star-mid-y', `${midY}px`);
+    star.style.setProperty('--star-drift', `${drift}px`);
+    star.style.setProperty('--star-fall', `${fall}px`);
+    star.style.setProperty('--star-mid-rotation', `${rotation * 0.42}deg`);
+    star.style.setProperty('--star-rotation', `${rotation}deg`);
+    star.style.setProperty('--star-duration', `${duration}ms`);
+    star.style.setProperty('--star-opacity', String(opacity));
+    star.style.setProperty('--star-mid-opacity', String(opacity * 0.82));
+    star.style.setProperty('--star-glow', `${isGlint ? 6 : 3 + Math.random() * 3}px`);
+    star.style.setProperty('--star-color', colors[Math.floor(Math.random() * colors.length)]);
+
+    activeStars.add(star);
+    layer.appendChild(star);
+    star.addEventListener('animationend', () => {
+      activeStars.delete(star);
+      star.remove();
+    }, { once: true });
+  };
+
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
+
+    const now = performance.now();
+    const deltaX = e.clientX - lastX;
+    const deltaY = e.clientY - lastY;
+    const distance = Math.hypot(deltaX, deltaY);
+    if (distance < 8 || now - lastSpawn < 22) return;
+
+    const pointRatio = 0.42 + Math.random() * 0.5;
+    const spawnX = lastX < 0 ? e.clientX : lastX + deltaX * pointRatio;
+    const spawnY = lastY < 0 ? e.clientY : lastY + deltaY * pointRatio;
+    createStar(spawnX, spawnY, deltaX);
+    if (distance > 28 && Math.random() < 0.34) {
+      createStar(e.clientX, e.clientY, deltaX);
+    }
+    lastX = e.clientX;
+    lastY = e.clientY;
+    lastSpawn = now;
+  }, { passive: true });
+
+  document.addEventListener('pointerover', (e) => {
+    if (e.pointerType === 'touch') return;
+
+    const target = e.target.closest?.([
+      'button',
+      '.mission-card',
+      '.bookmarks-sidebar',
+      '.todo-sidebar',
+      '.deferred-item',
+      '.todo-item',
+      '.search-box',
+      '.search-results',
+      '.appearance-panel',
+    ].join(','));
+
+    if (!target || target.contains(e.relatedTarget)) return;
+
+    const now = performance.now();
+    if (now - (hoverTimes.get(target) || 0) < 520) return;
+    hoverTimes.set(target, now);
+
+    const count = 4 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+      createStar(e.clientX + (Math.random() - 0.5) * 14, e.clientY + (Math.random() - 0.5) * 10);
+    }
+  }, { passive: true });
+}
+
+/* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
 setupFaviconErrorHandlers();
 setupConfigScriptHandler();
+setupAppearanceHandlers();
 setupSearchHandlers();
 setupDrawerHandlers();
 setupSidebarToggleHandlers();
+setupCursorStarTrail();
 renderDashboard();

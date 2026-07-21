@@ -2716,77 +2716,91 @@ header {
 }
 
 .header-left {
-  min-width: 220px;
+  min-width: 236px;
+  position: relative;
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 8px;
+  padding: 18px 20px 16px;
+  overflow: hidden;
+  border: 1px solid var(--glass-stroke);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--accent-sage) 18%, transparent), transparent 42%),
+    linear-gradient(145deg, color-mix(in srgb, var(--paper) 56%, transparent), color-mix(in srgb, var(--paper) 24%, transparent));
+  box-shadow: var(--glass-inner-shadow), var(--glass-panel-shadow);
+  backdrop-filter: blur(var(--glass-control-blur)) saturate(1.45);
+  -webkit-backdrop-filter: blur(var(--glass-control-blur)) saturate(1.45);
+}
+
+.header-left::before {
+  content: 'Local time';
+  position: absolute;
+  top: 13px;
+  left: 20px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.header-left::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-sage);
+  box-shadow: 0 0 0 4px var(--sage-tint);
 }
 
 .header-left h1 {
   position: relative;
   display: inline-block;
-  font-family: "SF Pro Rounded", "SF Pro Display", "Segoe UI Variable Display", "Arial Rounded MT Bold", sans-serif;
-  font-size: 46px;
-  font-weight: 650;
-  line-height: 0.95;
-  letter-spacing: 0;
+  padding-top: 12px;
+  color: var(--ink);
+  font-family: var(--display-font);
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -2.8px;
   font-variant-numeric: tabular-nums;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.7px rgba(255, 255, 255, 0.54);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.92) 0%,
-    rgba(222, 241, 255, 0.34) 30%,
-    rgba(133, 181, 217, 0.2) 52%,
-    rgba(255, 255, 255, 0.62) 75%,
-    rgba(116, 139, 158, 0.28) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  filter:
-    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.7))
-    drop-shadow(0 3px 7px rgba(28, 45, 59, 0.2));
+  text-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 14%, transparent);
 }
 
 .header-left h1::before,
 .header-left h1::after {
-  content: attr(data-time);
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
-
-.header-left h1::before {
-  transform: translateY(1px);
-  -webkit-text-stroke: 0.85px rgba(35, 63, 84, 0.32);
-  opacity: 0.72;
-}
-
-.header-left h1::after {
-  transform: translateY(-0.7px);
-  -webkit-text-stroke: 0.65px rgba(255, 255, 255, 0.78);
-  opacity: 0.86;
+  content: none;
 }
 
 .header-left .date {
-  margin-top: 5px;
+  margin-top: 0;
   display: inline-flex;
   align-items: center;
-  min-height: auto;
-  padding: 0;
-  font-size: 11px;
+  gap: 9px;
+  min-height: 26px;
+  padding: 9px 0 0;
+  border-top: 1px solid var(--glass-stroke-soft);
+  color: var(--muted);
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0;
-  color: var(--ink);
-  border: 1px solid var(--glass-stroke-soft);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 40%, transparent);
-  box-shadow: var(--glass-inner-shadow), 0 5px 14px color-mix(in srgb, var(--ink) 8%, transparent);
-  backdrop-filter: blur(var(--glass-control-blur)) saturate(1.45);
-  -webkit-backdrop-filter: blur(var(--glass-control-blur)) saturate(1.45);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.header-left .date::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid var(--accent-sage);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--sage-tint-soft);
 }
 
 .header-center {
@@ -2897,9 +2911,12 @@ header {
 .right-sidebar {
   width: 304px;
   top: 28px;
-  max-height: calc(100vh - 56px);
+  height: calc(100vh - 56px);
+  max-height: none;
   gap: 14px;
   padding: 1px;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .sidebar-header {
@@ -2934,8 +2951,8 @@ header {
 
 .sidebar-content {
   padding: 10px 12px 14px;
-  max-height: min(60vh, 620px);
-  overscroll-behavior: contain;
+  max-height: none;
+  overflow: visible;
 }
 
 .bookmarks-sidebar.collapsed,
@@ -3138,6 +3155,28 @@ header {
   color: var(--ink);
 }
 
+.section-total {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  margin-left: 5px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 24%, transparent);
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent-amber);
+  font-family: var(--system-font);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+
 .section-line {
   background: color-mix(in srgb, var(--ink) 12%, transparent);
 }
@@ -3261,12 +3300,13 @@ header {
 }
 
 .action-btn.close-tabs {
-  background: color-mix(in srgb, var(--paper) 34%, transparent);
+  background: var(--accent-tint-soft);
 }
 
 .action-btn.close-tabs:hover {
-  color: var(--status-abandoned);
-  background: color-mix(in srgb, var(--status-abandoned) 12%, var(--paper) 20%);
+  color: var(--ink);
+  background: var(--accent-tint);
+  border-color: var(--accent-amber);
 }
 
 .deferred-column {
@@ -3470,14 +3510,16 @@ footer {
   .right-sidebar {
     position: static;
     width: 100%;
+    height: auto;
     max-height: none;
     margin-top: 24px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
   }
 
   .sidebar-content {
-    max-height: 480px;
+    max-height: none;
   }
 
   .dashboard-columns {

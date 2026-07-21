@@ -1514,7 +1514,7 @@ function renderArchiveItem(item) {
  * 2. Fetches open tabs via chrome.tabs.query()
  * 3. Groups tabs by domain (with landing pages pulled out to their own group)
  * 4. Renders domain cards
- * 5. Updates footer stats
+ * 5. Updates header stats
  * 6. Renders the "Saved for Later" checklist
  */
 async function renderStaticDashboard() {
@@ -1654,7 +1654,7 @@ async function renderStaticDashboard() {
     openTabsSection.style.display = 'none';
   }
 
-  // --- Footer stats ---
+  // --- Header stats ---
   const statTabs = document.getElementById('statTabs');
   if (statTabs) statTabs.textContent = openTabs.length;
 
@@ -1816,7 +1816,7 @@ document.addEventListener('click', async (e) => {
       }, 200);
     }
 
-    // Update footer
+    // Update header stats
     const statTabs = document.getElementById('statTabs');
     if (statTabs) statTabs.textContent = openTabs.length;
 

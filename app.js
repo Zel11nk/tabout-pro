@@ -38,6 +38,8 @@ const BACKGROUND_DB_NAME = 'tabOutAppearance';
 const BACKGROUND_DB_STORE = 'images';
 const BACKGROUND_DB_KEY = 'background';
 let currentBackgroundObjectUrl = '';
+let currentBackgroundImage = null;
+let autoContrastFrame = 0;
 
 const PALETTES = {
   forest: {
@@ -2884,6 +2886,7 @@ function applyAppearance(settings) {
 
   document.documentElement.style.setProperty('--bg-mask-opacity', String(currentAppearance.mask / 100));
   setEffectsEnabled(currentAppearance.effectsEnabled);
+  refreshAutoContrast();
 
   syncAppearanceControls();
 }
@@ -2960,20 +2963,80 @@ async function clearBackgroundFile() {
   await withBackgroundStore('readwrite', store => store.delete(BACKGROUND_DB_KEY));
 }
 
+function refreshAutoContrast() {
+  cancelAnimationFrame(autoContrastFrame);
+  autoContrastFrame = requestAnimationFrame(() => {
+    const targets = document.querySelectorAll('.header-left, .section-header, .action-btn.close-tabs');
+    targets.forEach(target => target.classList.remove('light-content'));
+
+    if (!currentBackgroundImage) return;
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const scale = Math.max(viewportWidth / currentBackgroundImage.naturalWidth, viewportHeight / currentBackgroundImage.naturalHeight);
+    const renderedWidth = currentBackgroundImage.naturalWidth * scale;
+    const renderedHeight = currentBackgroundImage.naturalHeight * scale;
+    const offsetX = (viewportWidth - renderedWidth) / 2;
+    const offsetY = (viewportHeight - renderedHeight) / 2;
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) return;
+
+    canvas.width = 24;
+    canvas.height = 24;
+    const maskRgb = getComputedStyle(document.documentElement).getPropertyValue('--bg-mask-rgb').split(',').map(Number);
+    const maskOpacity = currentAppearance.mask / 100;
+
+    targets.forEach(target => {
+      if (!areEffectsEnabled() && !target.classList.contains('section-header')) return;
+
+      const rect = target.getBoundingClientRect();
+      const sourceX = Math.max(0, (rect.left - offsetX) / scale);
+      const sourceY = Math.max(0, (rect.top - offsetY) / scale);
+      const sourceWidth = Math.min(currentBackgroundImage.naturalWidth - sourceX, rect.width / scale);
+      const sourceHeight = Math.min(currentBackgroundImage.naturalHeight - sourceY, rect.height / scale);
+      if (sourceWidth <= 0 || sourceHeight <= 0) return;
+
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(currentBackgroundImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      let luminance = 0;
+
+      for (let i = 0; i < pixels.length; i += 4) {
+        const red = pixels[i] * (1 - maskOpacity) + maskRgb[0] * maskOpacity;
+        const green = pixels[i + 1] * (1 - maskOpacity) + maskRgb[1] * maskOpacity;
+        const blue = pixels[i + 2] * (1 - maskOpacity) + maskRgb[2] * maskOpacity;
+        luminance += (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
+      }
+
+      if (luminance / (pixels.length / 4) < 0.48) target.classList.add('light-content');
+    });
+  });
+}
+
 function applyBackgroundUrl(url) {
   if (currentBackgroundObjectUrl && currentBackgroundObjectUrl.startsWith('blob:')) {
     URL.revokeObjectURL(currentBackgroundObjectUrl);
   }
 
   currentBackgroundObjectUrl = url || '';
+  currentBackgroundImage = null;
 
   if (url) {
     document.body.classList.add('has-custom-background');
     document.body.style.backgroundImage = `url("${url}")`;
+    const image = new Image();
+    image.onload = () => {
+      if (currentBackgroundObjectUrl !== url) return;
+      currentBackgroundImage = image;
+      refreshAutoContrast();
+    };
+    image.src = url;
   } else {
     document.body.classList.remove('has-custom-background');
     document.body.style.removeProperty('background-image');
     document.body.style.removeProperty('--custom-bg-image');
+    refreshAutoContrast();
   }
 }
 
@@ -3235,5 +3298,6 @@ setupAppearanceHandlers();
 setupSearchHandlers();
 setupDrawerHandlers();
 setupSidebarToggleHandlers();
+window.addEventListener('resize', refreshAutoContrast, { passive: true });
 setupClock();
 renderDashboard();

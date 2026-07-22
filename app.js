@@ -860,10 +860,13 @@ const FAVICON_SERVICES = [
   (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=16`
 ];
 
-function getFaviconUrl(domain) {
-  if (!domain) return '';
+function getFaviconUrl(pageUrl) {
+  if (!pageUrl || !/^https?:\/\//i.test(pageUrl)) return '';
   // 使用国内优先的 favicon 服务
-  return FAVICON_SERVICES[0](domain);
+  const url = new URL(chrome.runtime.getURL('/_favicon/'));
+  url.searchParams.set('pageUrl', pageUrl);
+  url.searchParams.set('size', '32');
+  return url.toString();
 }
 
 /* ----------------------------------------------------------------
@@ -941,7 +944,7 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     const safeTitle = label.replace(/"/g, '&quot;');
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
-    const faviconUrl = getFaviconUrl(domain);
+    const faviconUrl = getFaviconUrl(tab.url);
     return `<div class="page-chip clickable${chipClass}" draggable="true" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
@@ -1022,7 +1025,7 @@ function renderDomainCard(group) {
     const safeTitle = label.replace(/"/g, '&quot;');
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
-    const faviconUrl = getFaviconUrl(domain);
+    const faviconUrl = getFaviconUrl(tab.url);
     return `<div class="page-chip clickable${chipClass}" draggable="true" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
@@ -1226,7 +1229,7 @@ function renderBookmarkItems(bookmarks) {
     try {
       const parsed = new URL(bookmark.url);
       domain = parsed.hostname.replace(/^www\./, '');
-      faviconUrl = getFaviconUrl(domain);
+      faviconUrl = getFaviconUrl(bookmark.url);
     } catch (urlErr) {
       console.warn('[tab-out] Invalid bookmark URL:', bookmark.url);
     }
@@ -1474,7 +1477,7 @@ async function renderDeferredColumn() {
 function renderDeferredItem(item) {
   let domain = '';
   try { domain = new URL(item.url).hostname.replace(/^www\./, ''); } catch {}
-  const faviconUrl = getFaviconUrl(domain);
+  const faviconUrl = getFaviconUrl(item.url);
   const ago = timeAgo(item.savedAt);
 
   return `
@@ -2378,6 +2381,8 @@ function setupFaviconErrorHandlers() {
   document.addEventListener('error', (e) => {
     const target = e.target;
     if (target.tagName === 'IMG' && target.hasAttribute('data-favicon')) {
+      target.style.display = 'none';
+      return;
       // 获取域名
       const currentSrc = target.src;
       let domain = target.getAttribute('data-domain') || '';
@@ -2718,7 +2723,7 @@ async function performSearch(query) {
     try {
       const parsed = new URL(tab.url);
       domain = parsed.hostname.replace(/^www\./, '');
-      faviconUrl = getFaviconUrl(domain);
+      faviconUrl = getFaviconUrl(tab.url);
     } catch (e) {
       domain = tab.url;
     }

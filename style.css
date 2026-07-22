@@ -3771,6 +3771,30 @@ html.effects-disabled input:not([type="checkbox"]):not([type="range"]) {
   background-image: none !important;
 }
 
+html.effects-disabled .header-left h1 {
+  text-shadow: none !important;
+}
+
+html.effects-disabled .header-left {
+  background: var(--paper) !important;
+  border-color: var(--warm-gray) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 10%, transparent) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.effects-disabled .header-left::after {
+  box-shadow: none !important;
+}
+
+html.effects-disabled .header-left .date {
+  border-top-color: var(--warm-gray) !important;
+}
+
+html.effects-disabled .header-left .date::before {
+  box-shadow: none !important;
+}
+
 @media (prefers-contrast: more) {
   :root {
     --glass-stroke: color-mix(in srgb, var(--ink) 36%, white);

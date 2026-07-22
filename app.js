@@ -877,6 +877,7 @@ function getFaviconUrl(pageUrl) {
 const ICONS = {
   tabs:    `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8.25V18a2.25 2.25 0 0 0 2.25 2.25h13.5A2.25 2.25 0 0 0 21 18V8.25m-18 0V6a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 6v2.25m-18 0h18" /></svg>`,
   close:   `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>`,
+  duplicate: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><rect x="8.5" y="8.5" width="10" height="10" rx="1.5" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5V6.75A1.75 1.75 0 0 0 13.75 5h-7A1.75 1.75 0 0 0 5 6.75v7A1.75 1.75 0 0 0 6.75 15.5H8.5" /></svg>`,
   archive: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>`,
   focus:   `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25" /></svg>`,
 };
@@ -997,11 +998,7 @@ function renderDomainCard(group) {
     ${tabCount} tab${tabCount !== 1 ? 's' : ''} open
   </span>`;
 
-  const dupeBadge = hasDupes
-    ? `<span class="open-tabs-badge duplicate">
-        ${totalExtras} duplicate${totalExtras !== 1 ? 's' : ''}
-      </span>`
-    : '';
+  const dupeUrlsEncoded = dupeUrls.map(([url]) => encodeURIComponent(url)).join(',');
 
   // Deduplicate for display: show each URL once, with (Nx) badge if duped
   const seen = new Set();
@@ -1042,31 +1039,30 @@ function renderDomainCard(group) {
     </div>`;
   }).join('') + (extraCount > 0 ? buildOverflowChips(uniqueTabs.slice(8), urlCounts) : '');
 
-  let actionsHtml = `
-    <button class="action-btn close-tabs" data-action="close-domain-tabs" data-domain-id="${stableId}">
-      ${ICONS.close}
-      Close all ${tabCount} tab${tabCount !== 1 ? 's' : ''}
-    </button>`;
-
-  if (hasDupes) {
-    const dupeUrlsEncoded = dupeUrls.map(([url]) => encodeURIComponent(url)).join(',');
-    actionsHtml += `
-      <button class="action-btn" data-action="dedup-keep-one" data-dupe-urls="${dupeUrlsEncoded}">
-        Close ${totalExtras} duplicate${totalExtras !== 1 ? 's' : ''}
-      </button>`;
-  }
+  const cardTools = `
+    <div class="card-tools" aria-label="Card actions">
+      <button class="card-action card-action-close" data-action="close-domain-tabs" data-domain-id="${stableId}" aria-label="Close all ${tabCount} tabs" title="Close all ${tabCount} tabs">
+        ${ICONS.close}
+      </button>
+      ${hasDupes ? `
+        <button class="card-action card-action-duplicate" data-action="dedup-keep-one" data-dupe-urls="${dupeUrlsEncoded}" aria-label="Close ${totalExtras} duplicate tab${totalExtras !== 1 ? 's' : ''}, keep one" title="Close ${totalExtras} duplicate tab${totalExtras !== 1 ? 's' : ''}, keep one">
+          ${ICONS.duplicate}
+          <span class="card-action-count">${totalExtras}</span>
+        </button>` : ''}
+    </div>`;
 
   return `
     <div class="mission-card domain-card ${hasDupes ? 'has-amber-bar' : 'has-neutral-bar'}" data-domain-id="${stableId}">
       <div class="status-bar"></div>
       <div class="mission-content">
         <div class="mission-top">
-          <span class="mission-name">${isLanding ? 'Homepages' : (group.label || friendlyDomain(group.domain))}</span>
-          ${tabBadge}
-          ${dupeBadge}
+          <div class="mission-heading">
+            <span class="mission-name">${isLanding ? 'Homepages' : (group.label || friendlyDomain(group.domain))}</span>
+            ${tabBadge}
+          </div>
+          ${cardTools}
         </div>
         <div class="mission-pages">${pageChips}</div>
-        <div class="actions">${actionsHtml}</div>
       </div>
       <div class="mission-meta">
         <div class="mission-page-count">${tabCount}</div>

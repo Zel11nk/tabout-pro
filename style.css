@@ -972,6 +972,89 @@ header {
   align-items: center;
   gap: 10px;
   margin-bottom: 6px;
+  flex-wrap: nowrap;
+}
+
+.card-tools {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.card-action {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.card-action svg {
+  width: 14px;
+  height: 14px;
+}
+
+.card-action:hover,
+.card-action:focus-visible {
+  outline: none;
+  background: var(--subtle-hover);
+  border-color: var(--warm-gray);
+  color: var(--ink);
+}
+
+.card-action-close:hover,
+.card-action-close:focus-visible {
+  color: var(--status-abandoned);
+  background: var(--danger-tint);
+  border-color: color-mix(in srgb, var(--status-abandoned) 20%, transparent);
+}
+
+.card-action-duplicate {
+  color: var(--accent-amber);
+}
+
+.card-action-duplicate:hover,
+.card-action-duplicate:focus-visible {
+  color: var(--accent-amber);
+  background: var(--accent-tint);
+  border-color: color-mix(in srgb, var(--accent-amber) 28%, transparent);
+}
+
+.card-action-count {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  min-width: 12px;
+  height: 12px;
+  padding: 0 3px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-amber);
+  color: var(--paper);
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--card-bg);
+}
+
+.mission-heading {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
 }
 

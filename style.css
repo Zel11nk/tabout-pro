@@ -499,6 +499,66 @@ header {
   text-align: right;
 }
 
+.appearance-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 14px;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.appearance-switch span {
+  display: grid;
+  gap: 3px;
+}
+
+.appearance-switch strong {
+  font-weight: 600;
+}
+
+.appearance-switch small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.appearance-switch input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 38px;
+  height: 22px;
+  flex: 0 0 auto;
+  border: 1px solid var(--glass-stroke-soft, var(--warm-gray));
+  border-radius: 999px;
+  background: var(--subtle-hover);
+  cursor: pointer;
+  position: relative;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.appearance-switch input::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 2px;
+  left: 2px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 20%, transparent);
+  transition: transform 160ms ease;
+}
+
+.appearance-switch input:checked {
+  border-color: var(--accent-amber);
+  background: var(--accent-amber);
+}
+
+.appearance-switch input:checked::before {
+  transform: translateX(16px);
+}
+
 .palette-row {
   display: flex;
   flex-wrap: wrap;
@@ -3643,6 +3703,72 @@ footer {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+html.effects-disabled *,
+html.effects-disabled *::before,
+html.effects-disabled *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+html.effects-disabled .cursor-star-layer {
+  display: none !important;
+}
+
+html.effects-disabled .bookmarks-sidebar,
+html.effects-disabled .todo-sidebar,
+html.effects-disabled .appearance-panel,
+html.effects-disabled .search-box,
+html.effects-disabled .search-results,
+html.effects-disabled .tab-cleanup-banner,
+html.effects-disabled .nudge-banner,
+html.effects-disabled .mission-card,
+html.effects-disabled .drawer,
+html.effects-disabled .todo-edit-content,
+html.effects-disabled .update-banner,
+html.effects-disabled button,
+html.effects-disabled input {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.effects-disabled .bookmarks-sidebar,
+html.effects-disabled .todo-sidebar,
+html.effects-disabled .appearance-panel,
+html.effects-disabled .search-box,
+html.effects-disabled .search-results,
+html.effects-disabled .tab-cleanup-banner,
+html.effects-disabled .nudge-banner,
+html.effects-disabled .mission-card,
+html.effects-disabled .drawer,
+html.effects-disabled .todo-edit-content,
+html.effects-disabled .update-banner {
+  background-color: var(--paper) !important;
+  background-image: none !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 10%, transparent) !important;
+}
+
+html.effects-disabled button:not(.palette-swatch) {
+  background-color: var(--paper) !important;
+  background-image: none !important;
+  color: var(--ink) !important;
+}
+
+html.effects-disabled .appearance-btn:not(.subtle),
+html.effects-disabled .tab-cleanup-btn,
+html.effects-disabled .todo-add-btn,
+html.effects-disabled .todo-edit-btn.primary,
+html.effects-disabled .action-btn.primary,
+html.effects-disabled .update-banner-btn {
+  background-color: var(--accent-amber) !important;
+  color: var(--on-accent) !important;
+}
+
+html.effects-disabled input:not([type="checkbox"]):not([type="range"]) {
+  background-color: var(--paper) !important;
+  background-image: none !important;
 }
 
 @media (prefers-contrast: more) {

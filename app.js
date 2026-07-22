@@ -30,6 +30,7 @@ const DEFAULT_APPEARANCE = {
   hasBackgroundImage: false,
   mask: 45,
   palette: 'forest',
+  effectsEnabled: true,
 };
 
 const MAX_BACKGROUND_IMAGE_SIZE = 20 * 1024 * 1024;
@@ -178,6 +179,9 @@ const PALETTES = {
 };
 
 let currentAppearance = { ...DEFAULT_APPEARANCE };
+let cursorStarTrailCleanup = null;
+let closeSoundContext = null;
+let closeSoundBuffer = null;
 
 /**
  * fetchOpenTabs()
@@ -449,25 +453,31 @@ async function dismissSavedTab(id) {
  * A filtered noise sweep that descends in pitch, like air moving.
  */
 function playCloseSound() {
+  if (!areEffectsEnabled()) return;
+
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+
+    const ctx = closeSoundContext || (closeSoundContext = new AudioContext());
     const t = ctx.currentTime;
 
     // Swoosh: shaped white noise through a sweeping bandpass filter
     const duration = 0.25;
-    const buffer = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
+    if (!closeSoundBuffer) {
+      closeSoundBuffer = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
+      const data = closeSoundBuffer.getChannelData(0);
 
-    // Generate noise with a natural envelope (quick attack, smooth decay)
-    for (let i = 0; i < data.length; i++) {
-      const pos = i / data.length;
-      // Envelope: ramps up fast in first 10%, then fades out smoothly
-      const env = pos < 0.1 ? pos / 0.1 : Math.pow(1 - (pos - 0.1) / 0.9, 1.5);
-      data[i] = (Math.random() * 2 - 1) * env;
+      // Generate noise with a natural envelope (quick attack, smooth decay)
+      for (let i = 0; i < data.length; i++) {
+        const pos = i / data.length;
+        const env = pos < 0.1 ? pos / 0.1 : Math.pow(1 - (pos - 0.1) / 0.9, 1.5);
+        data[i] = (Math.random() * 2 - 1) * env;
+      }
     }
 
     const source = ctx.createBufferSource();
-    source.buffer = buffer;
+    source.buffer = closeSoundBuffer;
 
     // Bandpass filter sweeps from high to low to create the "swoosh" character.
     const filter = ctx.createBiquadFilter();
@@ -482,9 +492,8 @@ function playCloseSound() {
     gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
 
     source.connect(filter).connect(gain).connect(ctx.destination);
+    if (ctx.state === 'suspended') ctx.resume();
     source.start(t);
-
-    setTimeout(() => ctx.close(), 500);
   } catch {
     // Audio not supported - fail silently.
   }
@@ -496,7 +505,7 @@ function playCloseSound() {
  * Releases a denser burst of silver-blue stars from closed content.
  */
 function shootClosingStars(x, y) {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!areEffectsEnabled() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   let layer = document.querySelector('.cursor-star-layer');
   if (!layer) {
@@ -546,6 +555,12 @@ function shootClosingStars(x, y) {
  */
 function animateCardOut(card) {
   if (!card) return;
+
+  if (!areEffectsEnabled()) {
+    card.remove();
+    checkAndShowEmptyState();
+    return;
+  }
 
   const rect = card.getBoundingClientRect();
   shootClosingStars(rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -2828,8 +2843,34 @@ async function activateSearchResult(item) {
    APPEARANCE FUNCTIONS
    ---------------------------------------------------------------- */
 
+function areEffectsEnabled() {
+  return currentAppearance.effectsEnabled !== false;
+}
+
+function setEffectsEnabled(enabled) {
+  const isEnabled = enabled !== false;
+  document.documentElement.classList.toggle('effects-disabled', !isEnabled);
+
+  if (!isEnabled) {
+    if (cursorStarTrailCleanup) cursorStarTrailCleanup();
+    document.querySelector('.cursor-star-layer')?.remove();
+    cursorStarTrailCleanup = null;
+    if (closeSoundContext) {
+      closeSoundContext.close().catch(() => {});
+      closeSoundContext = null;
+      closeSoundBuffer = null;
+    }
+  } else if (!cursorStarTrailCleanup) {
+    setupCursorStarTrail();
+  }
+}
+
 function applyAppearance(settings) {
-  currentAppearance = { ...DEFAULT_APPEARANCE, ...settings };
+  currentAppearance = {
+    ...DEFAULT_APPEARANCE,
+    ...settings,
+    effectsEnabled: settings?.effectsEnabled !== false,
+  };
 
   const palette = PALETTES[currentAppearance.palette] || PALETTES.forest;
   for (const [name, value] of Object.entries(palette)) {
@@ -2837,6 +2878,7 @@ function applyAppearance(settings) {
   }
 
   document.documentElement.style.setProperty('--bg-mask-opacity', String(currentAppearance.mask / 100));
+  setEffectsEnabled(currentAppearance.effectsEnabled);
 
   syncAppearanceControls();
 }
@@ -2844,9 +2886,14 @@ function applyAppearance(settings) {
 function syncAppearanceControls() {
   const maskRange = document.getElementById('backgroundMaskRange');
   const maskValue = document.getElementById('backgroundMaskValue');
+  const effectsToggle = document.getElementById('effectsToggle');
 
   if (maskRange) maskRange.value = String(currentAppearance.mask);
   if (maskValue) maskValue.textContent = `${currentAppearance.mask}%`;
+  if (effectsToggle) {
+    effectsToggle.checked = areEffectsEnabled();
+    effectsToggle.setAttribute('aria-checked', String(areEffectsEnabled()));
+  }
 
   document.querySelectorAll('.palette-swatch').forEach(button => {
     const isActive = button.dataset.palette === currentAppearance.palette;
@@ -2975,8 +3022,9 @@ async function setupAppearanceHandlers() {
   const input = document.getElementById('backgroundImageInput');
   const maskRange = document.getElementById('backgroundMaskRange');
   const paletteRow = document.getElementById('paletteRow');
+  const effectsToggle = document.getElementById('effectsToggle');
 
-  if (!panel || !toggle || !chooseBtn || !clearBtn || !input || !maskRange || !paletteRow) return;
+  if (!panel || !toggle || !chooseBtn || !clearBtn || !input || !maskRange || !paletteRow || !effectsToggle) return;
 
   const { tabOutAppearance } = await chrome.storage.local.get('tabOutAppearance');
   applyAppearance(tabOutAppearance || DEFAULT_APPEARANCE);
@@ -3023,6 +3071,10 @@ async function setupAppearanceHandlers() {
     await saveAppearance({ mask: Number(e.target.value) });
   });
 
+  effectsToggle.addEventListener('change', async (e) => {
+    await saveAppearance({ effectsEnabled: e.target.checked });
+  });
+
   paletteRow.addEventListener('click', async (e) => {
     const button = e.target.closest('.palette-swatch');
     if (!button) return;
@@ -3041,7 +3093,7 @@ async function setupAppearanceHandlers() {
 }
 
 function setupCursorStarTrail() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!areEffectsEnabled() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const layer = document.createElement('div');
   layer.className = 'cursor-star-layer';
@@ -3056,7 +3108,7 @@ function setupCursorStarTrail() {
   let lastSpawn = 0;
 
   const createStar = (x, y, velocityX = 0) => {
-    if (activeStars.size >= 72) return;
+    if (activeStars.size >= 48) return;
 
     const star = document.createElement('span');
     const isGlint = Math.random() < 0.28;
@@ -3096,7 +3148,7 @@ function setupCursorStarTrail() {
     }, { once: true });
   };
 
-  document.addEventListener('pointermove', (e) => {
+  const handlePointerMove = (e) => {
     if (e.pointerType === 'touch') return;
 
     const now = performance.now();
@@ -3115,9 +3167,9 @@ function setupCursorStarTrail() {
     lastX = e.clientX;
     lastY = e.clientY;
     lastSpawn = now;
-  }, { passive: true });
+  };
 
-  document.addEventListener('pointerover', (e) => {
+  const handlePointerOver = (e) => {
     if (e.pointerType === 'touch') return;
 
     const target = e.target.closest?.([
@@ -3142,7 +3194,17 @@ function setupCursorStarTrail() {
     for (let i = 0; i < count; i++) {
       createStar(e.clientX + (Math.random() - 0.5) * 14, e.clientY + (Math.random() - 0.5) * 10);
     }
-  }, { passive: true });
+  };
+
+  document.addEventListener('pointermove', handlePointerMove, { passive: true });
+  document.addEventListener('pointerover', handlePointerOver, { passive: true });
+
+  cursorStarTrailCleanup = () => {
+    document.removeEventListener('pointermove', handlePointerMove);
+    document.removeEventListener('pointerover', handlePointerOver);
+    activeStars.clear();
+    layer.remove();
+  };
 }
 
 function setupClock() {
@@ -3168,6 +3230,5 @@ setupAppearanceHandlers();
 setupSearchHandlers();
 setupDrawerHandlers();
 setupSidebarToggleHandlers();
-setupCursorStarTrail();
 setupClock();
 renderDashboard();

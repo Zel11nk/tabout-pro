@@ -875,7 +875,6 @@ function getFaviconUrl(pageUrl) {
    SVG ICON STRINGS
    ---------------------------------------------------------------- */
 const ICONS = {
-  tabs:    `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8.25V18a2.25 2.25 0 0 0 2.25 2.25h13.5A2.25 2.25 0 0 0 21 18V8.25m-18 0V6a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 6v2.25m-18 0h18" /></svg>`,
   close:   `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>`,
   duplicate: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><rect x="8.5" y="8.5" width="10" height="10" rx="1.5" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5V6.75A1.75 1.75 0 0 0 13.75 5h-7A1.75 1.75 0 0 0 5 6.75v7A1.75 1.75 0 0 0 6.75 15.5H8.5" /></svg>`,
   archive: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>`,
@@ -993,10 +992,7 @@ function renderDomainCard(group) {
   const hasDupes   = dupeUrls.length > 0;
   const totalExtras = dupeUrls.reduce((s, [, c]) => s + c - 1, 0);
 
-  const tabBadge = `<span class="open-tabs-badge">
-    ${ICONS.tabs}
-    ${tabCount} tab${tabCount !== 1 ? 's' : ''} open
-  </span>`;
+  const tabBadge = `<span class="card-tab-count" aria-label="${tabCount} tab${tabCount !== 1 ? 's' : ''} open">${tabCount}</span>`;
 
   const dupeUrlsEncoded = dupeUrls.map(([url]) => encodeURIComponent(url)).join(',');
 
@@ -1057,8 +1053,8 @@ function renderDomainCard(group) {
       <div class="mission-content">
         <div class="mission-top">
           <div class="mission-heading">
-            <span class="mission-name">${isLanding ? 'Homepages' : (group.label || friendlyDomain(group.domain))}</span>
             ${tabBadge}
+            <span class="mission-name">${isLanding ? 'Homepages' : (group.label || friendlyDomain(group.domain))}</span>
           </div>
           ${cardTools}
         </div>
@@ -1996,13 +1992,6 @@ document.addEventListener('click', async (e) => {
         b.style.transition = 'opacity 0.2s';
         b.style.opacity    = '0';
         setTimeout(() => b.remove(), 200);
-      });
-      card.querySelectorAll('.open-tabs-badge').forEach(badge => {
-        if (badge.textContent.includes('duplicate')) {
-          badge.style.transition = 'opacity 0.2s';
-          badge.style.opacity    = '0';
-          setTimeout(() => badge.remove(), 200);
-        }
       });
       card.classList.remove('has-amber-bar');
       card.classList.add('has-neutral-bar');

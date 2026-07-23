@@ -1093,28 +1093,22 @@ header {
 }
 
 /* Tab indicator badge — shows how many Chrome tabs are still open for this mission */
-.open-tabs-badge {
+.card-tab-count {
   display: inline-flex;
   align-items: center;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--accent-amber);
-  background: var(--accent-tint);
-  padding: 2px 8px;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--subtle-hover);
   border-radius: 999px;
   backdrop-filter: blur(12px) saturate(1.25);
   -webkit-backdrop-filter: blur(12px) saturate(1.25);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper) 34%, transparent);
-}
-
-.open-tabs-badge svg {
-  width: 10px;
-  height: 10px;
-}
-
-.open-tabs-badge.duplicate {
-  color: var(--accent-amber);
-  background: var(--accent-tint);
+  flex-shrink: 0;
 }
 
 .mission-summary {
@@ -3351,15 +3345,7 @@ header {
 }
 
 .mission-card::before {
-  top: 8px;
-  bottom: 8px;
-  left: 7px;
-  right: auto;
-  width: 3px;
-  height: auto;
-  border-radius: 3px;
-  opacity: 0.64;
-  filter: none;
+  display: none;
 }
 
 .mission-card:hover {
@@ -3378,7 +3364,7 @@ header {
   letter-spacing: 0;
 }
 
-.open-tabs-badge,
+.card-tab-count,
 .mission-tag,
 .todo-section-count,
 .drawer-group-count,

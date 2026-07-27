@@ -85,7 +85,6 @@ body.has-custom-background::after {
 .drawer,
 .update-banner,
 .todo-edit-content,
-.archive-search,
 .todo-input,
 .todo-due-date,
 .todo-edit-input,
@@ -223,7 +222,6 @@ body::before {
 
 .right-sidebar,
 .sidebar-content,
-.deferred-column,
 .search-results,
 .drawer-content,
 .todo-edit-content {
@@ -233,7 +231,6 @@ body::before {
 
 .right-sidebar::-webkit-scrollbar,
 .sidebar-content::-webkit-scrollbar,
-.deferred-column::-webkit-scrollbar,
 .search-results::-webkit-scrollbar,
 .drawer-content::-webkit-scrollbar,
 .todo-edit-content::-webkit-scrollbar {
@@ -473,8 +470,7 @@ header {
 .todo-add-btn:active,
 .todo-edit-btn:active,
 .chip-action:active,
-.todo-action-btn:active,
-.deferred-dismiss:active {
+.todo-action-btn:active {
   transform: scale(0.97);
 }
 
@@ -1570,6 +1566,55 @@ header {
   background: var(--subtle-hover);
 }
 
+.drawer-group-drag-handle {
+  width: 22px;
+  height: 22px;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.drawer-group-drag-handle:hover {
+  background: var(--subtle-hover);
+  color: var(--ink);
+}
+
+.drawer-group-drag-handle svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.drawer-group-drag-handle.dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+
+.drawer-group-header.folder-drop-before::before,
+.drawer-group-header.folder-drop-after::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  left: 6px;
+  z-index: 2;
+  border-top: 2px solid var(--accent-amber);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.drawer-group-header.folder-drop-before::before {
+  top: -3px;
+}
+
+.drawer-group-header.folder-drop-after::after {
+  bottom: -3px;
+}
+
 .drawer-group-name {
   font-size: 12px;
   font-weight: 500;
@@ -1712,12 +1757,6 @@ header { animation: fadeUp 0.5s ease both; }
 .abandoned-section .missions .mission-card:nth-child(3) { animation: fadeUp 0.4s ease 0.6s both; }
 footer { animation: fadeUp 0.5s ease 0.65s both; }
 
-.deferred-list .deferred-item:nth-child(1) { animation-delay: 0.05s; }
-.deferred-list .deferred-item:nth-child(2) { animation-delay: 0.1s; }
-.deferred-list .deferred-item:nth-child(3) { animation-delay: 0.15s; }
-.deferred-list .deferred-item:nth-child(4) { animation-delay: 0.2s; }
-.deferred-list .deferred-item:nth-child(5) { animation-delay: 0.25s; }
-.deferred-column .section-header { animation: fadeUp 0.5s ease 0.1s both; }
 
 
 /* ================================================================
@@ -1926,308 +1965,24 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 
 /* ================================================================
-   SAVED FOR LATER — Checklist Column + Archive
+   MAIN CONTENT LAYOUT
    ================================================================ */
 
-/* ---- Two-column layout ---- */
 .dashboard-columns {
   display: flex;
   gap: 32px;
   align-items: flex-start;
 }
 
-/* Open tabs column keeps the grid layout */
 .dashboard-columns .active-section {
   flex: 1;
   min-width: 600px;
 }
 
-/* Saved for later column — fixed width on the right, scrolls independently */
-.deferred-column {
-  width: 280px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 32px;
-  max-height: calc(100vh - 64px);
-  overflow-y: auto;
-}
-
-/* On narrow screens, stack vertically */
 @media (max-width: 800px) {
   .dashboard-columns {
     flex-direction: column;
   }
-  .deferred-column {
-    width: 100%;
-    position: static;
-  }
-}
-
-/* ---- Checklist items ---- */
-.deferred-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--subtle-hover);
-  animation: fadeUp 0.3s ease both;
-}
-
-.deferred-item:last-child {
-  border-bottom: none;
-}
-
-/* Custom checkbox */
-.deferred-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--warm-gray);
-  border-radius: 4px;
-  cursor: pointer;
-  flex-shrink: 0;
-  margin-top: 1px;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.deferred-checkbox:hover {
-  border-color: var(--accent-sage);
-}
-
-.deferred-checkbox:checked {
-  background: var(--accent-sage);
-  border-color: var(--accent-sage);
-}
-
-/* Checkmark inside the checkbox */
-.deferred-checkbox:checked::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 5px;
-  width: 4px;
-  height: 8px;
-  border: solid var(--on-accent);
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-/* Item content (title, domain, time) */
-.deferred-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.deferred-title {
-  font-size: 13px;
-  color: var(--ink);
-  text-decoration: none;
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: color 0.15s;
-}
-
-.deferred-title:hover {
-  color: var(--accent-amber);
-}
-
-.deferred-meta {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-  display: flex;
-  gap: 8px;
-}
-
-/* Checked-off item — strikethrough + faded */
-.deferred-item.checked .deferred-title {
-  text-decoration: line-through;
-  color: var(--muted);
-}
-
-.deferred-item.checked .deferred-meta {
-  opacity: 0.5;
-}
-
-/* Dismiss (X) button */
-.deferred-dismiss {
-  background: none;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 2px;
-  opacity: 0.3;
-  transition: opacity 0.15s, color 0.15s;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.deferred-dismiss svg {
-  width: 14px;
-  height: 14px;
-}
-
-.deferred-dismiss:hover {
-  opacity: 1;
-  color: var(--status-abandoned);
-}
-
-/* Slide-out animation for items being removed */
-.deferred-item.removing {
-  opacity: 0;
-  transform: translateX(20px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* ---- Empty state ---- */
-.deferred-empty {
-  font-size: 13px;
-  color: var(--muted);
-  font-style: italic;
-  padding: 24px 0;
-  text-align: center;
-}
-
-/* ---- Archive section ---- */
-.deferred-archive {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--warm-gray);
-}
-
-.archive-toggle {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-  width: 100%;
-  text-align: left;
-  transition: color 0.15s;
-}
-
-.archive-toggle:hover {
-  color: var(--ink);
-}
-
-.archive-chevron {
-  width: 14px;
-  height: 14px;
-  transition: transform 0.2s;
-}
-
-.archive-toggle.open .archive-chevron {
-  transform: rotate(180deg);
-}
-
-.archive-count {
-  font-size: 11px;
-  color: var(--muted);
-  opacity: 0.7;
-}
-
-.archive-body {
-  padding-top: 12px;
-}
-
-.archive-search {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--warm-gray);
-  border-radius: 14px;
-  background: var(--card-bg);
-  color: var(--ink);
-  outline: none;
-  transition: border-color 0.2s;
-  margin-bottom: 12px;
-}
-
-.archive-search:focus {
-  border-color: var(--accent-amber);
-}
-
-.archive-search::placeholder {
-  color: var(--muted);
-}
-
-/* Archive items are simpler — just title + domain + date */
-.archive-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 4px;
-  border-bottom: 1px solid var(--subtle-hover-soft);
-}
-
-.archive-item:last-child {
-  border-bottom: none;
-}
-
-.archive-item-title {
-  font-size: 12px;
-  color: var(--muted);
-  text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-  transition: color 0.15s;
-}
-
-.archive-item-title:hover {
-  color: var(--ink);
-}
-
-.archive-item-date {
-  font-size: 10px;
-  color: var(--muted);
-  opacity: 0.6;
-  flex-shrink: 0;
-  margin-right: 4px;
-}
-
-.archive-item-delete {
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 4px;
-  color: var(--muted);
-  opacity: 0;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.archive-item:hover .archive-item-delete {
-  opacity: 0.5;
-}
-
-.archive-item-delete:hover {
-  opacity: 1 !important;
-  color: var(--status-abandoned);
-  background: var(--danger-tint);
-}
-
-.archive-item-delete svg {
-  width: 14px;
-  height: 14px;
 }
 
 /* ---- Todo Drawer Toggle Button ---- */
@@ -2958,8 +2713,6 @@ header {
 .sidebar-toggle,
 .search-clear,
 .todo-action-btn,
-.deferred-dismiss,
-.archive-item-delete,
 .update-banner-dismiss,
 .drawer-close {
   position: relative;
@@ -3445,38 +3198,7 @@ header {
   box-shadow: var(--glass-inner-shadow), 0 5px 14px color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
-.deferred-column {
-  position: sticky;
-  padding: 16px;
-  top: 28px;
-  max-height: calc(100vh - 56px);
-  overflow-x: hidden;
-  border: 1px solid var(--glass-stroke-soft);
-  border-radius: var(--radius-panel);
-  background: color-mix(in srgb, var(--paper) 32%, transparent);
-  box-shadow: var(--glass-inner-shadow), var(--glass-content-shadow);
-  backdrop-filter: blur(var(--material-blur)) saturate(1.35);
-  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(1.35);
-}
 
-.deferred-column::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(145deg, color-mix(in srgb, white 20%, transparent), transparent 42%);
-}
-
-.deferred-column > * {
-  position: relative;
-  z-index: 1;
-}
-
-.deferred-column .section-header {
-  margin: 0 0 16px;
-}
-
-.deferred-item,
 .todo-item,
 .drawer-bookmark,
 .drawer-group-header {
@@ -3484,7 +3206,6 @@ header {
   transition: background-color 160ms ease, transform 160ms var(--spring);
 }
 
-.deferred-item:hover,
 .todo-item:hover,
 .drawer-bookmark:hover,
 .drawer-group-header:hover {
@@ -3493,7 +3214,6 @@ header {
 
 .todo-input,
 .todo-due-date,
-.archive-search,
 .todo-edit-input,
 .todo-edit-due-date {
   border: 1px solid var(--glass-stroke-soft);
@@ -3507,15 +3227,13 @@ header {
 
 .todo-input:focus,
 .todo-due-date:focus,
-.archive-search:focus,
 .todo-edit-input:focus,
 .todo-edit-due-date:focus {
   border-color: color-mix(in srgb, var(--accent-amber) 46%, white);
   background: color-mix(in srgb, var(--paper) 38%, transparent);
 }
 
-.todo-checkbox,
-.deferred-checkbox {
+.todo-checkbox {
   border-radius: 7px;
   background: color-mix(in srgb, var(--paper) 22%, transparent);
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent);
@@ -3662,8 +3380,7 @@ footer {
     flex-direction: column;
   }
 
-  .dashboard-columns .active-section,
-  .deferred-column {
+  .dashboard-columns .active-section {
     min-width: 0;
     width: 100%;
     position: static;

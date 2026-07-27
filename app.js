@@ -9,8 +9,7 @@
    1. Reads open browser tabs directly via chrome.tabs.query()
    2. Groups tabs by domain with a landing pages category
    3. Renders domain cards, banners, and stats
-   4. Handles all user actions (close tabs, save for later, focus tab)
-   5. Stores "Saved for Later" tabs in chrome.storage.local (no server)
+   4. Handles all user actions (close tabs, focus tab)
    ================================================================ */
 
 'use strict';
@@ -358,92 +357,6 @@ async function closeTabOutDupes() {
 
 
 /* ----------------------------------------------------------------
-   SAVED FOR LATER - chrome.storage.local
-
-   Replaces the old server-side SQLite + REST API with Chrome's
-   built-in key-value storage. Data persists across browser sessions
-   and doesn't require a running server.
-
-   Data shape stored under the "deferred" key:
-   [
-     {
-       id: "1712345678901",          // timestamp-based unique ID
-       url: "https://example.com",
-       title: "Example Page",
-       savedAt: "2026-04-04T10:00:00.000Z",  // ISO date string
-       completed: false,             // true = checked off (archived)
-       dismissed: false              // true = dismissed without reading
-     },
-     ...
-   ]
-   ---------------------------------------------------------------- */
-
-/**
- * saveTabForLater(tab)
- *
- * Saves a single tab to the "Saved for Later" list in chrome.storage.local.
- * @param {{ url: string, title: string }} tab
- */
-async function saveTabForLater(tab) {
-  const { deferred = [] } = await chrome.storage.local.get('deferred');
-  deferred.push({
-    id:        Date.now().toString(),
-    url:       tab.url,
-    title:     tab.title,
-    savedAt:   new Date().toISOString(),
-    completed: false,
-    dismissed: false,
-  });
-  await chrome.storage.local.set({ deferred });
-}
-
-/**
- * getSavedTabs()
- *
- * Returns all saved tabs from chrome.storage.local.
- * Filters out dismissed items (those are gone for good).
- * Splits into active (not completed) and archived (completed).
- */
-async function getSavedTabs() {
-  const { deferred = [] } = await chrome.storage.local.get('deferred');
-  const visible = deferred.filter(t => !t.dismissed);
-  return {
-    active:   visible.filter(t => !t.completed),
-    archived: visible.filter(t => t.completed),
-  };
-}
-
-/**
- * checkOffSavedTab(id)
- *
- * Marks a saved tab as completed (checked off). It moves to the archive.
- */
-async function checkOffSavedTab(id) {
-  const { deferred = [] } = await chrome.storage.local.get('deferred');
-  const tab = deferred.find(t => t.id === id);
-  if (tab) {
-    tab.completed = true;
-    tab.completedAt = new Date().toISOString();
-    await chrome.storage.local.set({ deferred });
-  }
-}
-
-/**
- * dismissSavedTab(id)
- *
- * Marks a saved tab as dismissed (removed from all lists).
- */
-async function dismissSavedTab(id) {
-  const { deferred = [] } = await chrome.storage.local.get('deferred');
-  const tab = deferred.find(t => t.id === id);
-  if (tab) {
-    tab.dismissed = true;
-    await chrome.storage.local.set({ deferred });
-  }
-}
-
-
-/* ----------------------------------------------------------------
    UI HELPERS
    ---------------------------------------------------------------- */
 
@@ -612,27 +525,6 @@ function checkAndShowEmptyState() {
 
   const countEl = document.getElementById('openTabsSectionCount');
   if (countEl) countEl.textContent = '0 domains';
-}
-
-/**
- * timeAgo(dateStr)
- *
- * Converts an ISO date string into a human-friendly relative time.
- * "2026-04-04T10:00:00Z" becomes "2 hrs ago" or "yesterday".
- */
-function timeAgo(dateStr) {
-  if (!dateStr) return '';
-  const then = new Date(dateStr);
-  const now  = new Date();
-  const diffMins  = Math.floor((now - then) / 60000);
-  const diffHours = Math.floor((now - then) / 3600000);
-  const diffDays  = Math.floor((now - then) / 86400000);
-
-  if (diffMins < 1)   return 'just now';
-  if (diffMins < 60)  return diffMins + ' min ago';
-  if (diffHours < 24) return diffHours + ' hr' + (diffHours !== 1 ? 's' : '') + ' ago';
-  if (diffDays === 1) return 'yesterday';
-  return diffDays + ' days ago';
 }
 
 /**
@@ -877,7 +769,6 @@ function getFaviconUrl(pageUrl) {
 const ICONS = {
   close:   `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>`,
   duplicate: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><rect x="8.5" y="8.5" width="10" height="10" rx="1.5" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5V6.75A1.75 1.75 0 0 0 13.75 5h-7A1.75 1.75 0 0 0 5 6.75v7A1.75 1.75 0 0 0 6.75 15.5H8.5" /></svg>`,
-  archive: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>`,
   focus:   `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25" /></svg>`,
 };
 
@@ -951,9 +842,6 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <div class="chip-actions">
-        <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
-        </button>
         <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
@@ -1025,9 +913,6 @@ function renderDomainCard(group) {
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <div class="chip-actions">
-        <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
-        </button>
         <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
@@ -1100,15 +985,13 @@ async function renderBookmarksSidebar() {
       return;
     }
 
-    const openTimes = getBookmarkOpenTimes();
-    const sortedGroups = sortBookmarkGroups(validGroups, openTimes, { keepRootLast: true });
-
-    sidebarContent.innerHTML = sortedGroups.map((group, index) => {
+    sidebarContent.innerHTML = validGroups.map((group, index) => {
       const hideHeader = validGroups.length === 1 && group.isRoot;
       return renderBookmarkGroup(group, { depth: 0, path: `${index}`, hideHeader });
     }).join('');
 
     setupGroupToggleHandlers();
+    setupBookmarkFolderDragHandlers();
     setupBookmarkDropTargets();
   } catch (err) {
     console.error('[tab-out] Failed to load bookmarks:', err);
@@ -1135,33 +1018,6 @@ function getBookmarkOpenTimes() {
   }
 }
 
-function getGroupLastOpenTime(group, openTimes) {
-  const directTime = (group.bookmarks || []).reduce((latest, bookmark) => {
-    if (!bookmark || !bookmark.url) return latest;
-    return Math.max(latest, openTimes[bookmark.url] || 0);
-  }, 0);
-
-  const childTime = (group.children || []).reduce((latest, child) => {
-    return Math.max(latest, getGroupLastOpenTime(child, openTimes));
-  }, 0);
-
-  return Math.max(directTime, childTime);
-}
-
-function sortBookmarkGroups(groups, openTimes, { keepRootLast = false } = {}) {
-  return groups
-    .map((group, index) => ({ group, index }))
-    .sort((a, b) => {
-      if (keepRootLast && a.group.isRoot !== b.group.isRoot) {
-        return a.group.isRoot ? 1 : -1;
-      }
-
-      const timeDiff = getGroupLastOpenTime(b.group, openTimes) - getGroupLastOpenTime(a.group, openTimes);
-      return timeDiff || a.index - b.index;
-    })
-    .map(item => item.group);
-}
-
 function renderBookmarkGroup(group, { depth, path, hideHeader = false }) {
   const count = getBookmarkCount(group);
   if (count === 0 && !group.id) return '';
@@ -1170,9 +1026,19 @@ function renderBookmarkGroup(group, { depth, path, hideHeader = false }) {
   const groupName = group.name || 'Untitled folder';
   const safeGroupName = escapeHtml(groupName);
   const safeFolderId = escapeAttr(group.id || '');
+  const safeParentId = escapeAttr(group.parentId || '');
+  const canReorder = !group.isRoot && !hideHeader;
+  const dragHandleHtml = canReorder ? `
+      <button class="drawer-group-drag-handle" type="button" draggable="true" aria-label="Drag to reorder ${escapeAttr(groupName)}" title="Drag to reorder">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="8" cy="6" r="1.5" /><circle cx="16" cy="6" r="1.5" />
+          <circle cx="8" cy="12" r="1.5" /><circle cx="16" cy="12" r="1.5" />
+          <circle cx="8" cy="18" r="1.5" /><circle cx="16" cy="18" r="1.5" />
+        </svg>
+      </button>` : '';
 
   const headerHtml = hideHeader ? '' : `
-    <div class="drawer-group-header bookmark-drop-target" data-bookmark-folder-id="${safeFolderId}" aria-expanded="${isOpen ? 'true' : 'false'}">
+    <div class="drawer-group-header bookmark-drop-target" data-bookmark-folder-id="${safeFolderId}" data-bookmark-parent-id="${safeParentId}" aria-expanded="${isOpen ? 'true' : 'false'}">
       <span class="drawer-group-name">${safeGroupName}</span>
       <span class="drawer-group-count">${count}</span>
       <button class="drawer-group-toggle" type="button" aria-label="Toggle ${escapeAttr(groupName)}">
@@ -1180,15 +1046,11 @@ function renderBookmarkGroup(group, { depth, path, hideHeader = false }) {
           <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
+      ${dragHandleHtml}
     </div>`;
 
   const bookmarksHtml = renderBookmarkItems(group.bookmarks || []);
-  const openTimes = getBookmarkOpenTimes();
-  const sortedChildren = sortBookmarkGroups(
-    group.children || [],
-    openTimes
-  );
-  const childrenHtml = sortedChildren
+  const childrenHtml = (group.children || [])
     .map((child, index) => renderBookmarkGroup(child, {
       depth: depth + 1,
       path: `${path}-${index}`,
@@ -1336,6 +1198,7 @@ async function getAllBookmarks() {
       function buildBookmarkFolder(folderNode) {
         const group = {
           id: folderNode.id,
+          parentId: folderNode.parentId,
           name: folderNode.title || 'Untitled folder',
           bookmarks: [],
           children: []
@@ -1405,114 +1268,6 @@ async function getBookmarksFromFolder(folderName) {
     });
   });
 }
-
-/**
- * renderDeferredColumn()
- *
- * Reads saved tabs from chrome.storage.local and renders the right-side
- * "Saved for Later" checklist column. Shows active items as a checklist
- * and completed items in a collapsible archive.
- */
-async function renderDeferredColumn() {
-  const column         = document.getElementById('deferredColumn');
-  const list           = document.getElementById('deferredList');
-  const empty          = document.getElementById('deferredEmpty');
-  const countEl        = document.getElementById('deferredCount');
-  const archiveEl      = document.getElementById('deferredArchive');
-  const archiveCountEl = document.getElementById('archiveCount');
-  const archiveList    = document.getElementById('archiveList');
-
-  if (!column) return;
-
-  try {
-    const { active, archived } = await getSavedTabs();
-
-    // Hide the entire column if there's nothing to show
-    if (active.length === 0 && archived.length === 0) {
-      column.style.display = 'none';
-      return;
-    }
-
-    column.style.display = 'block';
-
-    // Render active checklist items
-    if (active.length > 0) {
-      countEl.textContent = `${active.length} item${active.length !== 1 ? 's' : ''}`;
-      list.innerHTML = active.map(item => renderDeferredItem(item)).join('');
-      list.style.display = 'block';
-      empty.style.display = 'none';
-    } else {
-      list.style.display = 'none';
-      countEl.textContent = '';
-      empty.style.display = 'block';
-    }
-
-    // Render archive section
-    if (archived.length > 0) {
-      archiveCountEl.textContent = `(${archived.length})`;
-      archiveList.innerHTML = archived.map(item => renderArchiveItem(item)).join('');
-      archiveEl.style.display = 'block';
-    } else {
-      archiveEl.style.display = 'none';
-    }
-
-  } catch (err) {
-    console.warn('[tab-out] Could not load saved tabs:', err);
-    column.style.display = 'none';
-  }
-}
-
-/**
- * renderDeferredItem(item)
- *
- * Builds HTML for one active checklist item: checkbox, title link,
- * domain, time ago, dismiss button.
- */
-function renderDeferredItem(item) {
-  let domain = '';
-  try { domain = new URL(item.url).hostname.replace(/^www\./, ''); } catch {}
-  const faviconUrl = getFaviconUrl(item.url);
-  const ago = timeAgo(item.savedAt);
-
-  return `
-    <div class="deferred-item" data-deferred-id="${item.id}">
-      <input type="checkbox" class="deferred-checkbox" data-action="check-deferred" data-deferred-id="${item.id}">
-      <div class="deferred-info">
-        <a href="${item.url}" target="_blank" rel="noopener" class="deferred-title" title="${(item.title || '').replace(/"/g, '&quot;')}">
-          <img src="${faviconUrl}" alt="" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px" data-favicon data-domain="${domain}">${item.title || item.url}
-        </a>
-        <div class="deferred-meta">
-          <span>${domain}</span>
-          <span>${ago}</span>
-        </div>
-      </div>
-      <button class="deferred-dismiss" data-action="dismiss-deferred" data-deferred-id="${item.id}" title="Dismiss">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
-      </button>
-    </div>`;
-}
-
-/**
- * renderArchiveItem(item)
- *
- * Builds HTML for one completed/archived item (simpler: just title + date).
- */
-function renderArchiveItem(item) {
-  const ago = item.completedAt ? timeAgo(item.completedAt) : timeAgo(item.savedAt);
-  return `
-    <div class="archive-item">
-      <a href="${item.url}" target="_blank" rel="noopener" class="archive-item-title" title="${(item.title || '').replace(/"/g, '&quot;')}">
-        ${item.title || item.url}
-      </a>
-      <span class="archive-item-date">${ago}</span>
-      <button class="archive-item-delete" data-action="delete-archive-item" data-deferred-id="${item.id}" title="Delete">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </button>
-    </div>`;
-}
-
 
 /* ----------------------------------------------------------------
    MAIN DASHBOARD RENDERER
@@ -1672,9 +1427,6 @@ async function renderStaticDashboard() {
 
   // --- Check for duplicate Tab Out tabs ---
   checkTabOutDupes();
-
-  // --- Render "Saved for Later" column ---
-  await renderDeferredColumn();
 
   // --- Render bookmarks sidebar ---
   await renderBookmarksSidebar();
@@ -1836,104 +1588,6 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Save a single tab for later (then close it) ----
-  if (action === 'defer-single-tab') {
-    e.stopPropagation();
-    const tabUrl   = actionEl.dataset.tabUrl;
-    const tabTitle = actionEl.dataset.tabTitle || tabUrl;
-    if (!tabUrl) return;
-
-    // Save to chrome.storage.local
-    try {
-      await saveTabForLater({ url: tabUrl, title: tabTitle });
-    } catch (err) {
-      console.error('[tab-out] Failed to save tab:', err);
-      showToast('Failed to save tab');
-      return;
-    }
-
-    // Close the tab in Chrome
-    const allTabs = await chrome.tabs.query({});
-    const match   = allTabs.find(t => t.url === tabUrl);
-    if (match) await chrome.tabs.remove(match.id);
-    await fetchOpenTabs();
-
-    // Animate chip out
-    const chip = actionEl.closest('.page-chip');
-    if (chip) {
-      chip.style.transition = 'opacity 0.2s, transform 0.2s';
-      chip.style.opacity    = '0';
-      chip.style.transform  = 'scale(0.8)';
-      setTimeout(() => chip.remove(), 200);
-    }
-
-    showToast('Saved for later');
-    await renderDeferredColumn();
-    return;
-  }
-
-  // ---- Check off a saved tab (moves it to archive) ----
-  if (action === 'check-deferred') {
-    const id = actionEl.dataset.deferredId;
-    if (!id) return;
-
-    await checkOffSavedTab(id);
-
-    // Animate: strikethrough first, then slide out
-    const item = actionEl.closest('.deferred-item');
-    if (item) {
-      item.classList.add('checked');
-      setTimeout(() => {
-        item.classList.add('removing');
-        setTimeout(() => {
-          item.remove();
-          renderDeferredColumn(); // refresh counts and archive
-        }, 300);
-      }, 800);
-    }
-    return;
-  }
-
-  // ---- Dismiss a saved tab (removes it entirely) ----
-  if (action === 'dismiss-deferred') {
-    const id = actionEl.dataset.deferredId;
-    if (!id) return;
-
-    await dismissSavedTab(id);
-
-    const item = actionEl.closest('.deferred-item');
-    if (item) {
-      item.classList.add('removing');
-      setTimeout(() => {
-        item.remove();
-        renderDeferredColumn();
-      }, 300);
-    }
-    return;
-  }
-
-  // ---- Delete an archived item ----
-  if (action === 'delete-archive-item') {
-    const id = actionEl.dataset.deferredId;
-    if (!id) return;
-
-    await dismissSavedTab(id);
-
-    const item = actionEl.closest('.archive-item');
-    if (item) {
-      item.style.transition = 'opacity 0.2s, transform 0.2s';
-      item.style.opacity = '0';
-      item.style.transform = 'scale(0.9)';
-      setTimeout(() => {
-        item.remove();
-        renderDeferredColumn();
-      }, 200);
-    }
-    
-    showToast('Archived item deleted');
-    return;
-  }
-
   // ---- Close all tabs in a domain group ----
   if (action === 'close-domain-tabs') {
     const domainId = actionEl.dataset.domainId;
@@ -2039,18 +1693,6 @@ document.addEventListener('dragend', (e) => {
   document.querySelectorAll('.bookmark-drop-target.drop-ready').forEach(target => {
     target.classList.remove('drop-ready');
   });
-});
-
-// ---- Archive toggle - expand/collapse the archive section ----
-document.addEventListener('click', (e) => {
-  const toggle = e.target.closest('#archiveToggle');
-  if (!toggle) return;
-
-  toggle.classList.toggle('open');
-  const body = document.getElementById('archiveBody');
-  if (body) {
-    body.style.display = body.style.display === 'none' ? 'block' : 'none';
-  }
 });
 
 /* ----------------------------------------------------------------
@@ -2323,37 +1965,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ---- Archive search - filter archived items as user types ----
-document.addEventListener('input', async (e) => {
-  if (e.target.id !== 'archiveSearch') return;
-
-  const q = e.target.value.trim().toLowerCase();
-  const archiveList = document.getElementById('archiveList');
-  if (!archiveList) return;
-
-  try {
-    const { archived } = await getSavedTabs();
-
-    if (q.length < 2) {
-      // Show all archived items
-      archiveList.innerHTML = archived.map(item => renderArchiveItem(item)).join('');
-      return;
-    }
-
-    // Filter by title or URL containing the query string
-    const results = archived.filter(item =>
-      (item.title || '').toLowerCase().includes(q) ||
-      (item.url  || '').toLowerCase().includes(q)
-    );
-
-    archiveList.innerHTML = results.map(item => renderArchiveItem(item)).join('')
-      || '<div style="font-size:12px;color:var(--muted);padding:8px 0">No results</div>';
-  } catch (err) {
-    console.warn('[tab-out] Archive search failed:', err);
-  }
-});
-
-
 /* ----------------------------------------------------------------
    FAVICON ERROR HANDLER
    ---------------------------------------------------------------- */
@@ -2458,20 +2069,56 @@ function setupSidebarToggleHandlers() {
 function setupBookmarkDropTargets() {
   document.querySelectorAll('.bookmark-drop-target').forEach(target => {
     target.addEventListener('dragover', (e) => {
-      if (!e.dataTransfer?.types.includes('application/x-tab-out-tab')) return;
+      const isFolderDrag = e.dataTransfer?.types.includes('application/x-tab-out-folder');
+      const isTabDrag = e.dataTransfer?.types.includes('application/x-tab-out-tab');
+
+      if (isFolderDrag) {
+        if (!target.classList.contains('drawer-group-header') || !target.dataset.bookmarkParentId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
+        const dropAfter = e.clientY > target.getBoundingClientRect().top + target.offsetHeight / 2;
+        clearBookmarkFolderDropPreview();
+        target.classList.add(dropAfter ? 'folder-drop-after' : 'folder-drop-before');
+        return;
+      }
+
+      if (!isTabDrag) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
       target.classList.add('drop-ready');
     });
 
     target.addEventListener('dragleave', (e) => {
-      if (!target.contains(e.relatedTarget)) target.classList.remove('drop-ready');
+      if (!target.contains(e.relatedTarget)) {
+        target.classList.remove('drop-ready');
+        target.classList.remove('folder-drop-before', 'folder-drop-after');
+      }
     });
 
     target.addEventListener('drop', async (e) => {
+      const folderDragId = e.dataTransfer?.getData('application/x-tab-out-folder');
+      if (folderDragId) {
+        if (!target.classList.contains('drawer-group-header') || !target.dataset.bookmarkParentId) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+          const targetId = target.dataset.bookmarkFolderId;
+          const parentId = target.dataset.bookmarkParentId;
+          const dropAfter = target.classList.contains('folder-drop-after');
+          clearBookmarkFolderDropPreview();
+          await reorderBookmarkFolder(folderDragId, targetId, parentId, dropAfter);
+          await renderBookmarksSidebar();
+        } catch (err) {
+          console.error('[tab-out] Failed to reorder bookmark folder:', err);
+          showToast('Could not reorder folder');
+        }
+        return;
+      }
+
       e.preventDefault();
       target.classList.remove('drop-ready');
-
       const folderId = target.dataset.bookmarkFolderId;
       const serializedTab = e.dataTransfer?.getData('application/x-tab-out-tab');
       if (!folderId || !serializedTab) return;
@@ -2485,6 +2132,74 @@ function setupBookmarkDropTargets() {
         console.error('[tab-out] Failed to save dragged tab:', err);
         showToast('Could not save bookmark');
       }
+    });
+  });
+}
+
+function clearBookmarkFolderDropPreview() {
+  document.querySelectorAll('.drawer-group-header.folder-drop-before, .drawer-group-header.folder-drop-after').forEach(target => {
+    target.classList.remove('folder-drop-before', 'folder-drop-after');
+  });
+}
+
+async function reorderBookmarkFolder(folderId, targetId, parentId, dropAfter) {
+  if (!folderId || !targetId || folderId === targetId || !parentId) return;
+
+  const children = await new Promise((resolve, reject) => {
+    chrome.bookmarks.getChildren(parentId, (items) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(items);
+    });
+  });
+
+  const source = children.find(item => item.id === folderId);
+  const target = children.find(item => item.id === targetId);
+  if (!source || !target || source.url || target.url) return;
+
+  const remaining = children.filter(item => item.id !== folderId);
+  const targetIndex = remaining.findIndex(item => item.id === targetId);
+  if (targetIndex < 0) return;
+
+  const index = targetIndex + (dropAfter ? 1 : 0);
+  const nextOrder = remaining.map(item => item.id);
+  nextOrder.splice(index, 0, folderId);
+  if (children.every((item, currentIndex) => item.id === nextOrder[currentIndex])) return;
+
+  const destinationIndex = source.index < index ? index + 1 : index;
+
+  await new Promise((resolve, reject) => {
+    chrome.bookmarks.move(folderId, { parentId, index: destinationIndex }, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+function setupBookmarkFolderDragHandlers() {
+  document.querySelectorAll('.drawer-group-drag-handle[draggable="true"]').forEach(handle => {
+    handle.addEventListener('pointerdown', (e) => e.stopPropagation());
+    handle.addEventListener('click', (e) => e.stopPropagation());
+
+    handle.addEventListener('dragstart', (e) => {
+      const header = handle.closest('.drawer-group-header');
+      const folderId = header?.dataset.bookmarkFolderId;
+      if (!folderId || !e.dataTransfer) return;
+
+      e.stopPropagation();
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('application/x-tab-out-folder', folderId);
+      handle.classList.add('dragging');
+    });
+
+    handle.addEventListener('dragend', () => {
+      handle.classList.remove('dragging');
+      clearBookmarkFolderDropPreview();
     });
   });
 }
@@ -3230,7 +2945,6 @@ function setupCursorStarTrail() {
       '.mission-card',
       '.bookmarks-sidebar',
       '.todo-sidebar',
-      '.deferred-item',
       '.todo-item',
       '.search-box',
       '.search-results',

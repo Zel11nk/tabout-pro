@@ -594,13 +594,100 @@ header {
   background: linear-gradient(135deg, #f4fbf7 0 34%, #2f705e 34% 67%, #5a9c82 67%);
 }
 
-.palette-swatch.rosewood {
-  background: linear-gradient(135deg, #fcf6f5 0 34%, #7a4540 34% 67%, #a2685f 67%);
+.palette-swatch.custom {
+  background: linear-gradient(135deg,
+    var(--custom-paper, #f8f9f4) 0 34%,
+    var(--custom-primary, #2d5a27) 34% 67%,
+    var(--custom-secondary, #4a7c59) 67%);
 }
 
 .palette-swatch.active {
   outline: 2px solid var(--accent-amber);
   outline-offset: 2px;
+}
+
+.custom-colors {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--glass-stroke-soft, var(--warm-gray));
+}
+
+.custom-colors[hidden] {
+  display: none;
+}
+
+.custom-colors-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.custom-colors-heading strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.custom-colors-heading span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.custom-colors-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.custom-color-control {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 5px 7px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--glass-stroke-soft, var(--warm-gray));
+  border-radius: 12px;
+  background: var(--subtle-hover-soft);
+}
+
+.custom-color-control > span {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-color-control input[type="color"] {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.custom-color-control input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.custom-color-control input[type="color"]::-webkit-color-swatch {
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 8px;
+}
+
+.custom-color-control output {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
 }
 
 .search-box {
@@ -2702,6 +2789,7 @@ header {
 .header-right {
   min-width: 92px;
   justify-content: flex-end;
+  align-self: flex-start;
 }
 
 .search-container {
@@ -2855,8 +2943,11 @@ header {
   top: 54px;
   right: 0;
   width: 310px;
+  max-height: calc(100vh - 76px);
   padding: 18px;
   border-radius: 26px;
+  overflow-x: hidden;
+  overflow-y: auto;
   transform-origin: top right;
   animation: glassMaterialize 260ms var(--spring) both;
 }

@@ -179,6 +179,46 @@ const PALETTES = {
   },
 };
 
+const CUSTOM_COLOR_FIELDS = [
+  '--ink',
+  '--paper',
+  '--warm-gray',
+  '--muted',
+  '--accent-amber',
+  '--accent-sage',
+  '--accent-slate',
+  '--accent-rose',
+  '--status-active',
+  '--status-cooling',
+  '--status-abandoned',
+  '--on-accent',
+];
+
+function normalizeCustomColors(colors, fallbackPalette = PALETTES.forest) {
+  const normalized = {};
+  for (const name of CUSTOM_COLOR_FIELDS) {
+    const value = colors?.[name];
+    normalized[name] = /^#[0-9a-f]{6}$/i.test(value || '') ? value.toLowerCase() : fallbackPalette[name];
+  }
+  return normalized;
+}
+
+function hexToRgbChannels(hex) {
+  const value = hex.slice(1);
+  return `${parseInt(value.slice(0, 2), 16)}, ${parseInt(value.slice(2, 4), 16)}, ${parseInt(value.slice(4, 6), 16)}`;
+}
+
+function createCustomPalette(colors) {
+  const customColors = normalizeCustomColors(colors);
+  return {
+    ...PALETTES.forest,
+    ...customColors,
+    '--card-bg': 'rgba(var(--bg-mask-rgb), 0.34)',
+    '--shadow': `rgba(${hexToRgbChannels(customColors['--ink'])}, 0.07)`,
+    '--bg-mask-rgb': hexToRgbChannels(customColors['--paper']),
+  };
+}
+
 let currentAppearance = { ...DEFAULT_APPEARANCE };
 let cursorStarTrailCleanup = null;
 let closeSoundContext = null;
@@ -1530,7 +1570,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Open a bookmark in a new tab ----
+  // ---- Open a bookmark in the current tab ----
   if (action === 'open-bookmark') {
     const url = actionEl.dataset.bookmarkUrl;
     if (!url) return;
@@ -1540,7 +1580,7 @@ document.addEventListener('click', async (e) => {
     openTimes[url] = Date.now();
     localStorage.setItem('bookmarkOpenTimes', JSON.stringify(openTimes));
 
-    await chrome.tabs.create({ url: url });
+    await chrome.tabs.update({ url });
     showToast('Bookmark opened');
     return;
   }
@@ -2237,7 +2277,7 @@ async function saveTabToBookmarkFolder(parentId, tab) {
 /**
  * setupSearchHandlers()
  *
- * Sets up the tab search functionality.
+ * Sets up the tab and bookmark search functionality.
  */
 function setupSearchHandlers() {
   const searchContainer = document.getElementById('searchContainer');
@@ -2376,7 +2416,7 @@ function closeSearch(restoreFocus = false) {
 /**
  * performSearch(query)
  *
- * Performs real-time search on open tabs.
+ * Performs real-time search on open tabs and bookmarks.
  */
 async function performSearch(query) {
   const searchResults = document.getElementById('searchResults');
@@ -2388,8 +2428,13 @@ async function performSearch(query) {
     return;
   }
 
-  // Get current open tabs
-  const tabs = await chrome.tabs.query({});
+  const [tabs, bookmarkGroups] = await Promise.all([
+    chrome.tabs.query({}),
+    getAllBookmarks()
+  ]);
+
+  const currentQuery = document.getElementById('searchInput')?.value.trim().toLowerCase();
+  if (currentQuery !== query) return;
   
   // Filter tabs (exclude Chrome internal pages)
   const filteredTabs = tabs.filter(tab => 
@@ -2399,16 +2444,27 @@ async function performSearch(query) {
   );
 
   // Filter by title or URL containing the query
-  const results = filteredTabs.filter(tab => {
+  const matchingTabs = filteredTabs.filter(tab => {
     const title = (tab.title || '').toLowerCase();
     const url = (tab.url || '').toLowerCase();
     return title.includes(query) || url.includes(query);
   });
 
+  const matchingBookmarks = flattenBookmarks(bookmarkGroups).filter(bookmark => {
+    const title = (bookmark.title || '').toLowerCase();
+    const url = (bookmark.url || '').toLowerCase();
+    return title.includes(query) || url.includes(query);
+  });
+
+  const results = [
+    ...matchingTabs.map(tab => ({ type: 'tab', ...tab })),
+    ...matchingBookmarks.map(bookmark => ({ type: 'bookmark', ...bookmark }))
+  ];
+
   if (results.length === 0) {
     searchResults.innerHTML = `
       <div class="search-no-results">
-        No tabs found matching "${query}"
+        No tabs or bookmarks found matching "${escapeHtml(query)}"
       </div>
     `;
     searchResults.classList.add('open');
@@ -2417,32 +2473,36 @@ async function performSearch(query) {
   }
 
   // Render results with highlighted matches
-  searchResults.innerHTML = results.map((tab, index) => {
+  searchResults.innerHTML = results.map((result, index) => {
     const isActive = index === 0;
     let domain = '';
     let faviconUrl = '';
     
     try {
-      const parsed = new URL(tab.url);
+      const parsed = new URL(result.url);
       domain = parsed.hostname.replace(/^www\./, '');
-      faviconUrl = getFaviconUrl(tab.url);
+      faviconUrl = getFaviconUrl(result.url);
     } catch (e) {
-      domain = tab.url;
+      domain = result.url;
     }
 
-    const highlightedTitle = highlightMatch(tab.title || tab.url || 'Untitled', query);
-    const highlightedDomain = highlightMatch(domain, query);
+    const highlightedTitle = highlightMatch(result.title || result.url || 'Untitled', query);
+    const resultLabel = result.type === 'bookmark' ? 'Bookmark' : 'Tab';
+    const highlightedDomain = highlightMatch(`${resultLabel} · ${domain}`, query);
+    const resultData = result.type === 'bookmark'
+      ? `data-bookmark-url="${escapeAttr(result.url || '')}"`
+      : `data-tab-id="${result.id}"`;
 
     return `
       <div 
         class="search-result-item ${isActive ? 'active' : ''}" 
         role="option"
         aria-selected="${isActive ? 'true' : 'false'}"
-        data-tab-id="${tab.id}"
-        data-tab-url="${(tab.url || '').replace(/"/g, '&quot;')}"
-        title="${(tab.title || tab.url || '').replace(/"/g, '&quot;')}"
+        data-result-type="${result.type}"
+        ${resultData}
+        title="${escapeAttr(result.title || result.url || '')}"
       >
-        ${faviconUrl ? `<img class="search-result-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
+        ${faviconUrl ? `<img class="search-result-favicon" src="${escapeAttr(faviconUrl)}" alt="" data-favicon data-domain="${escapeAttr(domain)}">` : ''}
         <div class="search-result-content">
           <span class="search-result-title">${highlightedTitle}</span>
           <span class="search-result-domain">${highlightedDomain}</span>
@@ -2460,6 +2520,20 @@ async function performSearch(query) {
       activateSearchResult(item);
     });
   });
+}
+
+function flattenBookmarks(groups) {
+  const bookmarks = [];
+
+  function visit(group) {
+    for (const bookmark of group.bookmarks || []) {
+      if (bookmark?.url) bookmarks.push(bookmark);
+    }
+    for (const child of group.children || []) visit(child);
+  }
+
+  for (const group of groups || []) visit(group);
+  return bookmarks;
 }
 
 /**
@@ -2520,9 +2594,25 @@ function navigateSearchResults(items, direction) {
 /**
  * activateSearchResult(item)
  *
- * Activates (switches to) the selected tab and moves it to the front.
+ * Activates the selected tab or opens the selected bookmark.
  */
 async function activateSearchResult(item) {
+  if (item.dataset.resultType === 'bookmark') {
+    const url = item.dataset.bookmarkUrl;
+    if (!url) return;
+
+    try {
+      const openTimes = getBookmarkOpenTimes();
+      openTimes[url] = Date.now();
+      localStorage.setItem('bookmarkOpenTimes', JSON.stringify(openTimes));
+      await chrome.tabs.update({ url });
+      closeSearch();
+    } catch (err) {
+      console.error('[tab-out] Failed to open bookmark search result:', err);
+    }
+    return;
+  }
+
   const tabId = parseInt(item.dataset.tabId);
   
   if (isNaN(tabId)) return;
@@ -2579,7 +2669,14 @@ function applyAppearance(settings) {
     effectsEnabled: settings?.effectsEnabled !== false,
   };
 
-  const palette = PALETTES[currentAppearance.palette] || PALETTES.forest;
+  if (currentAppearance.palette === 'rosewood') {
+    currentAppearance.palette = 'custom';
+    currentAppearance.customColors = normalizeCustomColors(currentAppearance.customColors, PALETTES.rosewood);
+  }
+
+  const palette = currentAppearance.palette === 'custom'
+    ? createCustomPalette(currentAppearance.customColors)
+    : PALETTES[currentAppearance.palette] || PALETTES.forest;
   for (const [name, value] of Object.entries(palette)) {
     document.documentElement.style.setProperty(name, value);
   }
@@ -2595,6 +2692,7 @@ function syncAppearanceControls() {
   const maskRange = document.getElementById('backgroundMaskRange');
   const maskValue = document.getElementById('backgroundMaskValue');
   const effectsToggle = document.getElementById('effectsToggle');
+  const customColorsPanel = document.getElementById('customColorsPanel');
 
   if (maskRange) maskRange.value = String(currentAppearance.mask);
   if (maskValue) maskValue.textContent = `${currentAppearance.mask}%`;
@@ -2608,6 +2706,26 @@ function syncAppearanceControls() {
     button.classList.toggle('active', isActive);
     button.setAttribute('aria-pressed', String(isActive));
   });
+
+  if (customColorsPanel) {
+    customColorsPanel.hidden = currentAppearance.palette !== 'custom';
+  }
+
+  const customColors = normalizeCustomColors(currentAppearance.customColors);
+  document.querySelectorAll('[data-color-var]').forEach(input => {
+    const name = input.dataset.colorVar;
+    if (!name || !customColors[name]) return;
+    input.value = customColors[name];
+    const output = document.querySelector(`[data-color-value="${name}"]`);
+    if (output) output.textContent = customColors[name].toUpperCase();
+  });
+
+  const customSwatch = document.querySelector('.palette-swatch[data-palette="custom"]');
+  if (customSwatch) {
+    customSwatch.style.setProperty('--custom-paper', customColors['--paper']);
+    customSwatch.style.setProperty('--custom-primary', customColors['--accent-amber']);
+    customSwatch.style.setProperty('--custom-secondary', customColors['--accent-sage']);
+  }
 }
 
 async function saveAppearance(partial) {
@@ -2791,8 +2909,9 @@ async function setupAppearanceHandlers() {
   const maskRange = document.getElementById('backgroundMaskRange');
   const paletteRow = document.getElementById('paletteRow');
   const effectsToggle = document.getElementById('effectsToggle');
+  const customColorsPanel = document.getElementById('customColorsPanel');
 
-  if (!panel || !toggle || !chooseBtn || !clearBtn || !input || !maskRange || !paletteRow || !effectsToggle) return;
+  if (!panel || !toggle || !chooseBtn || !clearBtn || !input || !maskRange || !paletteRow || !effectsToggle || !customColorsPanel) return;
 
   const { tabOutAppearance } = await chrome.storage.local.get('tabOutAppearance');
   applyAppearance(tabOutAppearance || DEFAULT_APPEARANCE);
@@ -2846,7 +2965,25 @@ async function setupAppearanceHandlers() {
   paletteRow.addEventListener('click', async (e) => {
     const button = e.target.closest('.palette-swatch');
     if (!button) return;
-    await saveAppearance({ palette: button.dataset.palette || 'forest' });
+    const paletteName = button.dataset.palette || 'forest';
+
+    if (paletteName === 'custom') {
+      const fallbackPalette = PALETTES[currentAppearance.palette] || PALETTES.forest;
+      const customColors = normalizeCustomColors(currentAppearance.customColors, fallbackPalette);
+      await saveAppearance({ palette: 'custom', customColors });
+      return;
+    }
+
+    await saveAppearance({ palette: paletteName });
+  });
+
+  customColorsPanel.addEventListener('change', async (e) => {
+    const colorInput = e.target.closest('input[type="color"][data-color-var]');
+    if (!colorInput) return;
+
+    const customColors = normalizeCustomColors(currentAppearance.customColors);
+    customColors[colorInput.dataset.colorVar] = colorInput.value.toLowerCase();
+    await saveAppearance({ palette: 'custom', customColors });
   });
 
   document.addEventListener('click', (e) => {

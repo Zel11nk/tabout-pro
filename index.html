@@ -180,19 +180,25 @@
       </div>
       <div class="sidebar-content" id="todoSidebarContent">
         <!-- Todo form -->
-        <div class="todo-form" id="todoForm">
+        <div class="todo-form collapsed" id="todoForm">
+          <button type="button" class="todo-form-trigger" data-action="toggle-todo-form" aria-expanded="false" aria-controls="todoInput todoLinkFields todoDueDate">
+            <span class="todo-form-trigger-copy">
+              <strong>Add task</strong>
+            </span>
+            <span class="todo-form-trigger-icon" aria-hidden="true">+</span>
+          </button>
           <div class="todo-input-row">
             <div class="todo-input-wrapper">
               <svg class="todo-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 002 2" />
               </svg>
-              <input type="text" id="todoInput" placeholder="Add a new todo..." class="todo-input">
+              <input type="text" id="todoInput" placeholder="What needs to be done?" class="todo-input" autocomplete="off" aria-label="Todo name">
             </div>
           </div>
           <div class="todo-action-row">
             <div class="todo-date-wrapper">
-              <input type="date" id="todoDueDate" class="todo-due-date">
-              <button class="todo-date-clear" data-action="clear-due-date" title="Clear date">
+              <input type="date" id="todoDueDate" class="todo-due-date" aria-label="Due date" title="Due date">
+              <button type="button" class="todo-date-clear" data-action="clear-due-date" title="Clear date" aria-label="Clear due date">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -201,11 +207,24 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <button class="todo-add-btn" data-action="add-todo" title="Add todo">
+            <button type="button" class="todo-add-btn" data-action="add-todo" title="Add todo" aria-label="Add todo">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
               </svg>
             </button>
+          </div>
+          <div class="todo-links-editor" id="todoLinksInput" aria-label="Todo links">
+            <div class="todo-links-editor-heading">
+              <span>Links</span>
+              <button type="button" class="todo-link-add-btn" data-action="add-link-row">+ Add link</button>
+            </div>
+            <div class="todo-link-fields" id="todoLinkFields">
+              <div class="todo-link-row">
+                <input type="text" class="todo-link-label" placeholder="Label" aria-label="Link label">
+                <input type="url" class="todo-link-url" placeholder="https://example.com" inputmode="url" autocomplete="url" aria-label="Link URL">
+                <button type="button" class="todo-link-remove-btn" data-action="remove-link-row" title="Remove link" aria-label="Remove link">×</button>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -216,8 +235,8 @@
             <span class="todo-section-count" id="activeTodoCount">0</span>
           </div>
           <div class="todo-list" id="activeTodoList"></div>
-          <div class="todo-empty" id="activeEmpty" style="display:none">
-            No active todos
+          <div class="todo-empty" id="activeEmpty" hidden>
+            Your next step will show up here.
           </div>
         </div>
         
@@ -228,8 +247,8 @@
             <span class="todo-section-count" id="completedTodoCount">0</span>
           </div>
           <div class="todo-list" id="completedTodoList"></div>
-          <div class="todo-empty" id="completedEmpty" style="display:none">
-            No completed todos
+          <div class="todo-empty" id="completedEmpty" hidden>
+            Completed tasks stay here for reference.
           </div>
         </div>
         

@@ -1489,6 +1489,22 @@ async function renderDashboard() {
    ---------------------------------------------------------------- */
 
 document.addEventListener('click', async (e) => {
+  const todoLink = e.target.closest('.todo-link');
+  if (todoLink) {
+    e.preventDefault();
+    const url = normalizeHttpUrl(todoLink.getAttribute('href'));
+    if (!url) {
+      showToast('This link is not valid');
+      return;
+    }
+    try {
+      await chrome.tabs.create({ url });
+    } catch (err) {
+      showToast('Could not open link');
+    }
+    return;
+  }
+
   // Walk up the DOM to find the nearest element with data-action
   const actionEl = e.target.closest('[data-action]');
   if (!actionEl) return;
@@ -1496,12 +1512,44 @@ document.addEventListener('click', async (e) => {
   const action = actionEl.dataset.action;
 
   // ---- Todo Actions ----
+  if (action === 'toggle-todo-form') {
+    const form = document.getElementById('todoForm');
+    setTodoFormExpanded(Boolean(form?.classList.contains('collapsed')));
+    return;
+  }
+
   if (action === 'add-todo') {
     const input = document.getElementById('todoInput');
     const dueDateInput = document.getElementById('todoDueDate');
-    await addTodo(input.value, dueDateInput.value);
-    input.value = '';
-    dueDateInput.value = '';
+    const linksResult = collectTodoLinks(document.getElementById('todoLinkFields'));
+    if (linksResult.invalid) {
+      showToast('Links must use http:// or https://');
+      return;
+    }
+    const added = await addTodo(input.value, dueDateInput.value, linksResult.links);
+    if (added) {
+      input.value = '';
+      dueDateInput.value = '';
+      resetLinkEditor(document.getElementById('todoLinkFields'));
+      setTodoFormExpanded(false);
+    }
+    return;
+  }
+
+  if (action === 'add-link-row' || action === 'add-edit-link') {
+    const container = action === 'add-edit-link'
+      ? document.getElementById('todoEditLinks')
+      : document.getElementById('todoLinkFields');
+    const row = appendTodoLinkRow(container);
+    row?.querySelector('.todo-link-url')?.focus();
+    return;
+  }
+
+  if (action === 'remove-link-row') {
+    const row = actionEl.closest('.todo-link-row');
+    const container = row?.parentElement;
+    row?.remove();
+    if (container && !container.querySelector('.todo-link-row')) appendTodoLinkRow(container);
     return;
   }
 
@@ -1741,10 +1789,86 @@ document.addEventListener('dragend', (e) => {
 
 let todos = [];
 
+function setTodoFormExpanded(expanded) {
+  const form = document.getElementById('todoForm');
+  if (!form) return;
+
+  form.classList.toggle('collapsed', !expanded);
+  const trigger = form.querySelector('.todo-form-trigger');
+  trigger?.setAttribute('aria-expanded', String(expanded));
+
+  Array.from(form.children).forEach(child => {
+    if (child === trigger) return;
+    child.hidden = !expanded;
+  });
+
+  if (expanded) document.getElementById('todoInput')?.focus();
+}
+
+function normalizeHttpUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.href;
+  } catch (err) {
+    return null;
+  }
+}
+
+function normalizeTodoLink(link) {
+  const source = typeof link === 'string' ? { url: link } : (link || {});
+  const url = normalizeHttpUrl(source.url || source.href);
+  if (!url) return null;
+
+  let host = '';
+  try {
+    host = new URL(url).hostname.replace(/^www\./, '');
+  } catch (err) {
+    host = url;
+  }
+
+  const label = String(source.label || source.title || '').trim() || host;
+  return { label, url };
+}
+
+function sanitizeTodoLinks(links) {
+  const seen = new Set();
+  return (Array.isArray(links) ? links : [])
+    .map(normalizeTodoLink)
+    .filter(link => {
+      if (!link || seen.has(link.url)) return false;
+      seen.add(link.url);
+      return true;
+    });
+}
+
+function normalizeTodo(todo) {
+  if (!todo || typeof todo !== 'object') return null;
+  const text = String(todo.text || todo.title || '').trim();
+  if (!text) return null;
+
+  const links = sanitizeTodoLinks(todo.links);
+
+  return {
+    ...todo,
+    id: String(todo.id || generateTodoId()),
+    text,
+    dueDate: todo.dueDate || null,
+    links,
+    completed: Boolean(todo.completed),
+    completedAt: todo.completedAt || null,
+    createdAt: todo.createdAt || new Date().toISOString()
+  };
+}
+
 async function loadTodos() {
   try {
     const result = await chrome.storage.local.get('tabOutTodos');
-    todos = result.tabOutTodos || [];
+    const savedTodos = Array.isArray(result.tabOutTodos) ? result.tabOutTodos : [];
+    todos = savedTodos.map(normalizeTodo).filter(Boolean);
   } catch (err) {
     console.error('[tab-out] Failed to load todos:', err);
     todos = [];
@@ -1787,34 +1911,174 @@ function formatCompletedDate(dateStr) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function getTodoLinkLabel(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch (err) {
+    return url;
+  }
+}
+
+function createTodoLinkRow(link = {}) {
+  const row = document.createElement('div');
+  row.className = 'todo-link-row';
+
+  const labelInput = document.createElement('input');
+  labelInput.type = 'text';
+  labelInput.className = 'todo-link-label';
+  labelInput.placeholder = 'Label';
+  labelInput.setAttribute('aria-label', 'Link label');
+  labelInput.value = link.label || '';
+
+  const urlInput = document.createElement('input');
+  urlInput.type = 'url';
+  urlInput.className = 'todo-link-url';
+  urlInput.placeholder = 'https://example.com';
+  urlInput.inputMode = 'url';
+  urlInput.autocomplete = 'url';
+  urlInput.setAttribute('aria-label', 'Link URL');
+  urlInput.value = link.url || '';
+
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.className = 'todo-link-remove-btn';
+  removeButton.dataset.action = 'remove-link-row';
+  removeButton.title = 'Remove link';
+  removeButton.setAttribute('aria-label', 'Remove link');
+  removeButton.textContent = '×';
+
+  row.append(labelInput, urlInput, removeButton);
+  return row;
+}
+
+function appendTodoLinkRow(container, link = {}) {
+  if (!container) return null;
+  const row = createTodoLinkRow(link);
+  container.appendChild(row);
+  return row;
+}
+
+function resetLinkEditor(container) {
+  if (!container) return;
+  container.replaceChildren(createTodoLinkRow());
+}
+
+function collectTodoLinks(container) {
+  const links = [];
+  let invalid = false;
+  if (!container) return { links, invalid };
+
+  container.querySelectorAll('.todo-link-row').forEach(row => {
+    const labelInput = row.querySelector('.todo-link-label');
+    const urlInput = row.querySelector('.todo-link-url');
+    const label = labelInput?.value.trim() || '';
+    const rawUrl = urlInput?.value.trim() || '';
+
+    labelInput?.removeAttribute('aria-invalid');
+    urlInput?.removeAttribute('aria-invalid');
+    if (!label && !rawUrl) return;
+
+    const url = normalizeHttpUrl(rawUrl);
+    if (!url) {
+      invalid = true;
+      urlInput?.setAttribute('aria-invalid', 'true');
+      return;
+    }
+
+    links.push({
+      label: label || getTodoLinkLabel(url),
+      url
+    });
+  });
+
+  return { links, invalid };
+}
+
 function renderTodoItem(todo) {
+  const item = document.createElement('article');
+  item.className = `todo-item${todo.completed ? ' completed' : ''}`;
+  item.dataset.todoId = todo.id;
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.className = 'todo-checkbox';
+  checkbox.checked = todo.completed;
+  checkbox.dataset.action = 'toggle-todo';
+  checkbox.dataset.todoId = todo.id;
+  checkbox.setAttribute('aria-label', todo.completed ? `Mark ${todo.text} as active` : `Complete ${todo.text}`);
+
+  const content = document.createElement('div');
+  content.className = 'todo-content';
+
+  const text = document.createElement('span');
+  text.className = 'todo-text';
+  text.textContent = todo.text;
+  content.appendChild(text);
+
   const dueDateInfo = formatDate(todo.dueDate);
   const completedDate = formatCompletedDate(todo.completedAt);
-  
-  return `
-    <div class="todo-item ${todo.completed ? 'completed' : ''}" data-todo-id="${todo.id}">
-      <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} data-action="toggle-todo" data-todo-id="${todo.id}">
-      <div class="todo-content">
-        <span class="todo-text">${escapeHtml(todo.text)}</span>
-        <div class="todo-meta">
-          ${dueDateInfo ? `<span class="todo-due-date-badge ${dueDateInfo.class}">${dueDateInfo.text}</span>` : ''}
-          ${completedDate ? `<span class="todo-completed-at">Completed ${completedDate}</span>` : ''}
-        </div>
-      </div>
-      <div class="todo-actions">
-        <button class="todo-action-btn todo-edit-btn" data-action="edit-todo" data-todo-id="${todo.id}" title="Edit">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
-        </button>
-        <button class="todo-action-btn todo-delete-btn" data-action="delete-todo" data-todo-id="${todo.id}" title="Delete">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  `;
+  if (dueDateInfo || completedDate) {
+    const meta = document.createElement('div');
+    meta.className = 'todo-meta';
+    if (dueDateInfo) {
+      const badge = document.createElement('span');
+      badge.className = `todo-due-date-badge ${dueDateInfo.class}`.trim();
+      badge.textContent = dueDateInfo.text;
+      meta.appendChild(badge);
+    }
+    if (completedDate) {
+      const completed = document.createElement('span');
+      completed.className = 'todo-completed-at';
+      completed.textContent = `Completed ${completedDate}`;
+      meta.appendChild(completed);
+    }
+    content.appendChild(meta);
+  }
+
+  if (todo.links.length > 0) {
+    const links = document.createElement('div');
+    links.className = 'todo-links';
+    links.setAttribute('aria-label', 'Related links');
+    todo.links.forEach(link => {
+      const anchor = document.createElement('a');
+      anchor.className = 'todo-link';
+      anchor.href = link.url;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.title = link.url;
+      anchor.textContent = link.label || getTodoLinkLabel(link.url);
+      const icon = document.createElement('span');
+      icon.className = 'todo-link-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = '↗';
+      anchor.appendChild(icon);
+      links.appendChild(anchor);
+    });
+    content.appendChild(links);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'todo-actions';
+
+  const editButton = document.createElement('button');
+  editButton.className = 'todo-action-btn todo-edit-btn';
+  editButton.dataset.action = 'edit-todo';
+  editButton.dataset.todoId = todo.id;
+  editButton.title = 'Edit';
+  editButton.setAttribute('aria-label', `Edit ${todo.text}`);
+  editButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>';
+
+  const deleteButton = document.createElement('button');
+  deleteButton.className = 'todo-action-btn todo-delete-btn';
+  deleteButton.dataset.action = 'delete-todo';
+  deleteButton.dataset.todoId = todo.id;
+  deleteButton.title = 'Delete';
+  deleteButton.setAttribute('aria-label', `Delete ${todo.text}`);
+  deleteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>';
+
+  actions.append(editButton, deleteButton);
+  item.append(checkbox, content, actions);
+  return item;
 }
 
 async function renderTodoSidebar() {
@@ -1862,20 +2126,24 @@ async function renderTodoSidebar() {
   
   // Render active todos
   if (activeCount === 0) {
-    activeTodoList.innerHTML = '';
-    if (activeEmpty) activeEmpty.style.display = 'block';
+    activeTodoList.replaceChildren();
+    if (activeEmpty) activeEmpty.hidden = false;
   } else {
-    if (activeEmpty) activeEmpty.style.display = 'none';
-    activeTodoList.innerHTML = activeTodos.map(renderTodoItem).join('');
+    if (activeEmpty) activeEmpty.hidden = true;
+    const fragment = document.createDocumentFragment();
+    activeTodos.forEach(todo => fragment.appendChild(renderTodoItem(todo)));
+    activeTodoList.replaceChildren(fragment);
   }
   
   // Render completed todos
   if (completedCount === 0) {
-    completedTodoList.innerHTML = '';
-    if (completedEmpty) completedEmpty.style.display = 'block';
+    completedTodoList.replaceChildren();
+    if (completedEmpty) completedEmpty.hidden = false;
   } else {
-    if (completedEmpty) completedEmpty.style.display = 'none';
-    completedTodoList.innerHTML = completedTodos.map(renderTodoItem).join('');
+    if (completedEmpty) completedEmpty.hidden = true;
+    const fragment = document.createDocumentFragment();
+    completedTodos.forEach(todo => fragment.appendChild(renderTodoItem(todo)));
+    completedTodoList.replaceChildren(fragment);
   }
   
   // Update counts
@@ -1883,7 +2151,13 @@ async function renderTodoSidebar() {
   if (completedTodoCount) completedTodoCount.textContent = completedCount;
   
   if (todoStats) {
-    todoStats.innerHTML = `<span class="todo-active-count">${activeCount}</span> active / <span class="todo-completed-count">${completedCount}</span> completed`;
+    const activeCountEl = document.createElement('span');
+    activeCountEl.className = 'todo-active-count';
+    activeCountEl.textContent = activeCount;
+    const completedCountEl = document.createElement('span');
+    completedCountEl.className = 'todo-completed-count';
+    completedCountEl.textContent = completedCount;
+    todoStats.replaceChildren(activeCountEl, document.createTextNode(' active · '), completedCountEl, document.createTextNode(' completed'));
   }
 }
 
@@ -1903,8 +2177,21 @@ function showEditTodoModal(todo) {
         <div class="todo-edit-title" id="todoEditTitle">Edit Todo</div>
         <form class="todo-edit-form" id="todoEditForm">
           <input type="hidden" id="todoEditId">
-          <input type="text" id="todoEditText" class="todo-edit-input" placeholder="Todo text">
-          <input type="date" id="todoEditDueDate" class="todo-edit-due-date">
+          <label class="todo-edit-field">
+            <span>Name</span>
+            <input type="text" id="todoEditText" class="todo-edit-input" placeholder="What needs to be done?" autocomplete="off">
+          </label>
+          <label class="todo-edit-field">
+            <span>Due date</span>
+            <input type="date" id="todoEditDueDate" class="todo-edit-due-date">
+          </label>
+          <div class="todo-links-editor todo-edit-links-editor">
+            <div class="todo-links-editor-heading">
+              <span>Links</span>
+              <button type="button" class="todo-link-add-btn" data-action="add-edit-link">+ Add link</button>
+            </div>
+            <div class="todo-link-fields" id="todoEditLinks"></div>
+          </div>
           <div class="todo-edit-buttons">
             <button type="button" class="todo-edit-btn cancel" data-action="cancel-edit">Cancel</button>
             <button type="submit" class="todo-edit-btn primary">Save</button>
@@ -1918,8 +2205,14 @@ function showEditTodoModal(todo) {
   document.getElementById('todoEditId').value = todo.id;
   document.getElementById('todoEditText').value = todo.text;
   document.getElementById('todoEditDueDate').value = todo.dueDate || '';
+
+  const linksContainer = document.getElementById('todoEditLinks');
+  linksContainer.replaceChildren();
+  todo.links.forEach(link => appendTodoLinkRow(linksContainer, link));
+  if (todo.links.length === 0) appendTodoLinkRow(linksContainer);
   
   modal.classList.add('open');
+  document.getElementById('todoEditText').focus();
 }
 
 function closeEditTodoModal() {
@@ -1929,13 +2222,17 @@ function closeEditTodoModal() {
   }
 }
 
-async function addTodo(text, dueDate) {
-  if (!text.trim()) return;
+async function addTodo(text, dueDate, links = []) {
+  if (!text.trim()) {
+    showToast('Enter a todo name');
+    return false;
+  }
   
   const newTodo = {
     id: generateTodoId(),
     text: text.trim(),
     dueDate: dueDate || null,
+    links: sanitizeTodoLinks(links),
     completed: false,
     completedAt: null,
     createdAt: new Date().toISOString()
@@ -1946,6 +2243,7 @@ async function addTodo(text, dueDate) {
   await renderTodoSidebar();
   
   showToast('Todo added');
+  return true;
 }
 
 async function toggleTodo(id) {
@@ -1961,19 +2259,24 @@ async function toggleTodo(id) {
   showToast(todo.completed ? 'Todo completed!' : 'Todo reactivated');
 }
 
-async function updateTodo(id, text, dueDate) {
-  if (!text.trim()) return;
+async function updateTodo(id, text, dueDate, links = []) {
+  if (!text.trim()) {
+    showToast('Enter a todo name');
+    return false;
+  }
   
   const todo = todos.find(t => t.id === id);
   if (!todo) return;
   
   todo.text = text.trim();
   todo.dueDate = dueDate || null;
+  todo.links = sanitizeTodoLinks(links);
   
   await saveTodos();
   await renderTodoSidebar();
   
   showToast('Todo updated');
+  return true;
 }
 
 async function deleteTodo(id) {
@@ -1991,9 +2294,14 @@ document.addEventListener('submit', async (e) => {
     const id = document.getElementById('todoEditId').value;
     const text = document.getElementById('todoEditText').value;
     const dueDate = document.getElementById('todoEditDueDate').value;
-    
-    await updateTodo(id, text, dueDate);
-    closeEditTodoModal();
+    const linksResult = collectTodoLinks(document.getElementById('todoEditLinks'));
+    if (linksResult.invalid) {
+      showToast('Links must use http:// or https://');
+      return;
+    }
+
+    const updated = await updateTodo(id, text, dueDate, linksResult.links);
+    if (updated) closeEditTodoModal();
   }
 });
 
@@ -3136,4 +3444,5 @@ setupDrawerHandlers();
 setupSidebarToggleHandlers();
 window.addEventListener('resize', refreshAutoContrast, { passive: true });
 setupClock();
+setTodoFormExpanded(false);
 renderDashboard();

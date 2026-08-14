@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,30 +26,15 @@
       <div class="date" id="dateDisplay"></div>
     </div>
     
-    <!-- Tab cleanup banner -->
-    <div class="header-center">
-      <div class="tab-cleanup-banner" id="tabOutDupeBanner" style="display:none">
-        <div class="tab-cleanup-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
-          </svg>
-        </div>
-        <div class="tab-cleanup-text">
-          <strong id="tabOutDupeCount"></strong> extra Tab Out tabs
-        </div>
-        <button class="tab-cleanup-btn" data-action="close-tabout-dupes">Close extras</button>
-      </div>
-    </div>
-    
     <!-- Search component -->
     <div class="header-right">
       <div class="search-container" id="searchContainer">
-        <button class="appearance-toggle" id="appearanceToggle" title="Appearance" aria-label="Open appearance settings" aria-expanded="false" aria-controls="appearancePanel">
+        <button class="appearance-toggle" id="appearanceToggle" title="外观" aria-label="打开外观设置" aria-expanded="false" aria-controls="appearancePanel">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88a1.125 1.125 0 0 1 1.591 0l3.712 3.712a1.125 1.125 0 0 1 0 1.591l-2.88 2.88M6.75 17.25h.008v.008H6.75v-.008Z" />
           </svg>
         </button>
-        <button class="search-toggle" id="searchToggle" title="Search tabs and bookmarks" aria-label="Search open tabs and bookmarks" aria-expanded="false" aria-controls="searchBox">
+        <button class="search-toggle" id="searchToggle" title="搜索" aria-label="搜索标签页和书签" aria-expanded="false" aria-controls="searchBox">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
@@ -58,7 +43,7 @@
           <input 
             type="text" 
             id="searchInput" 
-            placeholder="Search tabs and bookmarks..."
+            placeholder="搜索标签页和书签…"
             autocomplete="off"
             spellcheck="false"
             role="combobox"
@@ -66,65 +51,68 @@
             aria-controls="searchResults"
             aria-expanded="false"
           />
-          <button class="search-clear" id="searchClear" style="display:none" aria-label="Clear search">
+          <button class="search-clear" id="searchClear" style="display:none" aria-label="清除搜索">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
         <div class="search-results" id="searchResults" role="listbox"></div>
-        <div class="appearance-panel" id="appearancePanel" aria-label="Appearance settings" hidden>
+        <div class="appearance-panel" id="appearancePanel" aria-label="外观设置" hidden>
           <div class="appearance-heading">
             <div>
-              <strong>Appearance</strong>
-              <span>Personalize your space</span>
+              <strong>外观</strong>
+              <span>自定义你的空间</span>
             </div>
           </div>
           <div class="appearance-row">
-            <button class="appearance-btn" id="chooseBackgroundBtn">Choose image</button>
-            <button class="appearance-btn subtle" id="clearBackgroundBtn">Clear</button>
+            <button class="appearance-btn" id="chooseBackgroundBtn">选择图片</button>
+            <button class="appearance-btn subtle" id="clearBackgroundBtn">清除</button>
             <input type="file" id="backgroundImageInput" accept="image/*" hidden>
           </div>
           <label class="appearance-range">
-            <span>Mask</span>
+            <span>遮罩</span>
             <input type="range" id="backgroundMaskRange" min="10" max="85" step="5">
             <strong id="backgroundMaskValue">45%</strong>
           </label>
           <label class="appearance-switch">
             <span>
-              <strong>Effects</strong>
-              <small>Cursor trail, motion and sound</small>
+              <strong>效果</strong>
+              <small>鼠标轨迹、动效和声音</small>
             </span>
             <input type="checkbox" id="effectsToggle" role="switch" checked>
           </label>
-          <div class="palette-row" id="paletteRow" aria-label="Color palette">
-            <button class="palette-swatch active" data-palette="forest" title="Forest" aria-label="Forest palette"></button>
-            <button class="palette-swatch slate" data-palette="slate" title="Slate" aria-label="Slate palette"></button>
-            <button class="palette-swatch dusk" data-palette="dusk" title="Dusk" aria-label="Dusk palette"></button>
-            <button class="palette-swatch ocean" data-palette="ocean" title="Ocean" aria-label="Ocean palette"></button>
-            <button class="palette-swatch plum" data-palette="plum" title="Plum" aria-label="Plum palette"></button>
-            <button class="palette-swatch graphite" data-palette="graphite" title="Graphite" aria-label="Graphite palette"></button>
-            <button class="palette-swatch mint" data-palette="mint" title="Mint" aria-label="Mint palette"></button>
-            <button class="palette-swatch custom" data-palette="custom" title="Custom" aria-label="Custom palette"></button>
+          <label class="appearance-switch language-control">
+            <span><strong>语言</strong></span>
+            <select id="languageSelect" aria-label="语言">
+              <option value="zh">中文</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <div class="palette-row" id="paletteRow" aria-label="配色">
+            <button class="palette-swatch active" data-palette="forest" title="森林" aria-label="森林配色"></button>
+            <button class="palette-swatch slate" data-palette="slate" title="石板" aria-label="石板配色"></button>
+            <button class="palette-swatch dusk" data-palette="dusk" title="暮色" aria-label="暮色配色"></button>
+            <button class="palette-swatch ocean" data-palette="ocean" title="海洋" aria-label="海洋配色"></button>
+            <button class="palette-swatch plum" data-palette="plum" title="梅紫" aria-label="梅紫配色"></button>
+            <button class="palette-swatch graphite" data-palette="graphite" title="石墨" aria-label="石墨配色"></button>
+            <button class="palette-swatch mint" data-palette="mint" title="薄荷" aria-label="薄荷配色"></button>
+            <button class="palette-swatch custom" data-palette="custom" title="自定义" aria-label="自定义配色"></button>
           </div>
           <div class="custom-colors" id="customColorsPanel" hidden>
             <div class="custom-colors-heading">
-              <strong>Custom colors</strong>
-              <span>Configure every theme color</span>
+              <strong>自定义颜色</strong>
+              <span>配置主题颜色</span>
             </div>
             <div class="custom-colors-grid">
-              <label class="custom-color-control"><span>Text</span><input type="color" data-color-var="--ink"><output data-color-value="--ink"></output></label>
-              <label class="custom-color-control"><span>Surface</span><input type="color" data-color-var="--paper"><output data-color-value="--paper"></output></label>
-              <label class="custom-color-control"><span>Border</span><input type="color" data-color-var="--warm-gray"><output data-color-value="--warm-gray"></output></label>
-              <label class="custom-color-control"><span>Muted text</span><input type="color" data-color-var="--muted"><output data-color-value="--muted"></output></label>
-              <label class="custom-color-control"><span>Primary</span><input type="color" data-color-var="--accent-amber"><output data-color-value="--accent-amber"></output></label>
-              <label class="custom-color-control"><span>Secondary</span><input type="color" data-color-var="--accent-sage"><output data-color-value="--accent-sage"></output></label>
-              <label class="custom-color-control"><span>Tertiary</span><input type="color" data-color-var="--accent-slate"><output data-color-value="--accent-slate"></output></label>
-              <label class="custom-color-control"><span>Rose accent</span><input type="color" data-color-var="--accent-rose"><output data-color-value="--accent-rose"></output></label>
-              <label class="custom-color-control"><span>Active</span><input type="color" data-color-var="--status-active"><output data-color-value="--status-active"></output></label>
-              <label class="custom-color-control"><span>Cooling</span><input type="color" data-color-var="--status-cooling"><output data-color-value="--status-cooling"></output></label>
-              <label class="custom-color-control"><span>Danger</span><input type="color" data-color-var="--status-abandoned"><output data-color-value="--status-abandoned"></output></label>
-              <label class="custom-color-control"><span>On primary</span><input type="color" data-color-var="--on-accent"><output data-color-value="--on-accent"></output></label>
+              <label class="custom-color-control"><span>文字</span><input type="color" data-color-var="--ink"><output data-color-value="--ink"></output></label>
+              <label class="custom-color-control"><span>表面</span><input type="color" data-color-var="--paper"><output data-color-value="--paper"></output></label>
+              <label class="custom-color-control"><span>边框</span><input type="color" data-color-var="--warm-gray"><output data-color-value="--warm-gray"></output></label>
+              <label class="custom-color-control"><span>次要文字</span><input type="color" data-color-var="--muted"><output data-color-value="--muted"></output></label>
+              <label class="custom-color-control"><span>主色</span><input type="color" data-color-var="--accent-amber"><output data-color-value="--accent-amber"></output></label>
+              <label class="custom-color-control"><span>次色</span><input type="color" data-color-var="--accent-sage"><output data-color-value="--accent-sage"></output></label>
+              <label class="custom-color-control"><span>危险</span><input type="color" data-color-var="--status-abandoned"><output data-color-value="--status-abandoned"></output></label>
+              <label class="custom-color-control"><span>主色上的文字</span><input type="color" data-color-var="--on-accent"><output data-color-value="--on-accent"></output></label>
             </div>
           </div>
         </div>
@@ -140,9 +128,8 @@
     <!-- Open tabs -->
     <div class="active-section" id="openTabsSection" style="display:none">
       <div class="section-header">
-        <h2><span id="openTabsSectionTitle">Right now</span> <span class="section-total" id="statTabs">—</span></h2>
         <div class="section-line"></div>
-        <div class="section-count" id="openTabsSectionCount"></div>
+        <div class="section-actions" id="openTabsSectionActions"></div>
       </div>
       <div class="missions" id="openTabsMissions"></div>
     </div>
@@ -158,8 +145,8 @@
     <!-- Bookmarks section -->
     <aside class="bookmarks-sidebar" id="bookmarksSidebar">
       <div class="sidebar-header">
-        <div class="sidebar-title">Bookmarks</div>
-        <button class="sidebar-toggle" data-sidebar="bookmarks" aria-label="Collapse bookmarks" aria-expanded="true">
+        <div class="sidebar-title">书签</div>
+        <button class="sidebar-toggle" data-sidebar="bookmarks" aria-label="收起书签" aria-expanded="true">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
@@ -171,8 +158,8 @@
     <!-- Todo section -->
     <aside class="todo-sidebar collapsed" id="todoSidebar">
       <div class="sidebar-header">
-        <div class="sidebar-title">Todo List</div>
-        <button class="sidebar-toggle" data-sidebar="todo" aria-label="Expand todo list" aria-expanded="false">
+        <div class="sidebar-title">待办清单</div>
+        <button class="sidebar-toggle" data-sidebar="todo" aria-label="展开待办清单" aria-expanded="false">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
@@ -183,7 +170,7 @@
         <div class="todo-form collapsed" id="todoForm">
           <button type="button" class="todo-form-trigger" data-action="toggle-todo-form" aria-expanded="false" aria-controls="todoInput todoLinkFields todoDueDate">
             <span class="todo-form-trigger-copy">
-              <strong>Add task</strong>
+              <strong>添加待办</strong>
             </span>
             <span class="todo-form-trigger-icon" aria-hidden="true">+</span>
           </button>
@@ -192,13 +179,13 @@
               <svg class="todo-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 002 2" />
               </svg>
-              <input type="text" id="todoInput" placeholder="What needs to be done?" class="todo-input" autocomplete="off" aria-label="Todo name">
+              <input type="text" id="todoInput" placeholder="要做什么？" class="todo-input" autocomplete="off" aria-label="待办名称">
             </div>
           </div>
           <div class="todo-action-row">
             <div class="todo-date-wrapper">
-              <input type="date" id="todoDueDate" class="todo-due-date" aria-label="Due date" title="Due date">
-              <button type="button" class="todo-date-clear" data-action="clear-due-date" title="Clear date" aria-label="Clear due date">
+              <input type="date" id="todoDueDate" class="todo-due-date" aria-label="截止日期" title="截止日期">
+              <button type="button" class="todo-date-clear" data-action="clear-due-date" title="清除日期" aria-label="清除截止日期">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -207,22 +194,22 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <button type="button" class="todo-add-btn" data-action="add-todo" title="Add todo" aria-label="Add todo">
+              <button type="button" class="todo-add-btn" data-action="add-todo" title="添加待办" aria-label="添加待办">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
               </svg>
             </button>
           </div>
-          <div class="todo-links-editor" id="todoLinksInput" aria-label="Todo links">
+          <div class="todo-links-editor" id="todoLinksInput" aria-label="待办链接">
             <div class="todo-links-editor-heading">
-              <span>Links</span>
-              <button type="button" class="todo-link-add-btn" data-action="add-link-row">+ Add link</button>
+              <span>链接</span>
+              <button type="button" class="todo-link-add-btn" data-action="add-link-row">+ 添加链接</button>
             </div>
             <div class="todo-link-fields" id="todoLinkFields">
               <div class="todo-link-row">
-                <input type="text" class="todo-link-label" placeholder="Label" aria-label="Link label">
-                <input type="url" class="todo-link-url" placeholder="https://example.com" inputmode="url" autocomplete="url" aria-label="Link URL">
-                <button type="button" class="todo-link-remove-btn" data-action="remove-link-row" title="Remove link" aria-label="Remove link">×</button>
+                <input type="text" class="todo-link-label" placeholder="名称" aria-label="链接名称">
+                <input type="url" class="todo-link-url" placeholder="https://example.com" inputmode="url" autocomplete="url" aria-label="链接地址">
+                <button type="button" class="todo-link-remove-btn" data-action="remove-link-row" title="删除链接" aria-label="删除链接">×</button>
               </div>
             </div>
           </div>
@@ -231,7 +218,7 @@
         <!-- Active todos section -->
         <div class="todo-section active-section">
           <div class="todo-section-header">
-            <h3 class="todo-section-title">To Do</h3>
+            <h3 class="todo-section-title">待处理</h3>
             <span class="todo-section-count" id="activeTodoCount">0</span>
           </div>
           <div class="todo-list" id="activeTodoList"></div>
@@ -243,7 +230,7 @@
         <!-- Completed todos section -->
         <div class="todo-section completed-section">
           <div class="todo-section-header">
-            <h3 class="todo-section-title">Completed</h3>
+            <h3 class="todo-section-title">已完成</h3>
             <span class="todo-section-count" id="completedTodoCount">0</span>
           </div>
           <div class="todo-list" id="completedTodoList"></div>
@@ -254,7 +241,7 @@
         
         <!-- Stats -->
         <div class="todo-stats" id="todoStats">
-          <span class="todo-active-count">0</span> active / <span class="todo-completed-count">0</span> completed
+          <span class="todo-active-count">0</span> 项待处理 · <span class="todo-completed-count">0</span> 项已完成
         </div>
       </div>
     </aside>

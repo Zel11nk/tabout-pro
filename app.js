@@ -30,7 +30,29 @@ const DEFAULT_APPEARANCE = {
   mask: 45,
   palette: 'forest',
   effectsEnabled: true,
+  language: 'zh',
 };
+
+const I18N = {
+  zh: {
+    appearance: '外观', appearanceHint: '自定义你的空间', chooseImage: '选择图片', clear: '清除', mask: '遮罩', effects: '效果', effectsHint: '鼠标轨迹、动效和声音', language: '语言', customColors: '自定义颜色', customColorsHint: '配置主题颜色', textColor: '文字', surface: '表面', border: '边框', mutedText: '次要文字', primary: '主色', secondary: '次色', dangerColor: '危险', onPrimary: '主色上的文字', chinese: '中文', english: 'English',
+    searchPlaceholder: '搜索标签页和书签…', openTabs: '打开的标签页', closeAll: count => `关闭全部 ${count} 个标签页`, bookmarks: '书签', todoList: '待办清单', addTask: '添加待办', todoPlaceholder: '要做什么？', dueDate: '截止日期', add: '添加', links: '链接', addLink: '添加链接', toDo: '待处理', completed: '已完成', nextStep: '下一步会显示在这里', completedHint: '已完成的事项会保留在这里', emptyTitle: '标签页已清空', emptySubtitle: '现在可以专心做事了', noSearchResults: query => `没有找到与“${query}”匹配的标签页或书签`, domainCount: count => `${count} 个域名`, more: count => `还有 ${count} 个`, tabs: '标签页', closeThisTab: '关闭此标签页', cardActions: '卡片操作', activeStats: count => `${count} 项待处理`, completedStats: count => `${count} 项已完成`, activeSuffix: '项待处理', completedSuffix: '项已完成', edit: '编辑', editTodo: '编辑待办', delete: '删除', name: '名称', cancel: '取消', save: '保存', relatedLinks: '相关链接', completeTodo: text => `完成${text}`, reactivateTodo: text => `恢复${text}`, linkInvalid: '链接必须使用 http:// 或 https://', linkOpenFailed: '链接打开失败', enterName: '请输入待办名称', bookmarkOpened: '已打开书签', tabClosed: '已关闭标签页', duplicatesClosed: '已关闭重复标签页', allTabsClosed: '所有标签页已关闭', folderReorderFailed: '文件夹排序失败', bookmarkSaved: '已保存书签', bookmarkSaveFailed: '保存书签失败', imageTooLarge: '请选择 20MB 以内的图片', backgroundUpdated: '背景已更新', backgroundUpdateFailed: '背景更新失败', backgroundCleared: '背景已清除',
+    today: '今天', tomorrow: '明天', daysAfter: count => `${count} 天后`, overdue: count => `逾期 ${count} 天`, completedAt: date => `完成于 ${date}`,
+  },
+  en: {
+    appearance: 'Appearance', appearanceHint: 'Personalize your space', chooseImage: 'Choose image', clear: 'Clear', mask: 'Mask', effects: 'Effects', effectsHint: 'Cursor trail, motion and sound', language: 'Language', customColors: 'Custom colors', customColorsHint: 'Configure theme colors', textColor: 'Text', surface: 'Surface', border: 'Border', mutedText: 'Muted text', primary: 'Primary', secondary: 'Secondary', dangerColor: 'Danger', onPrimary: 'On primary', chinese: '中文', english: 'English',
+    searchPlaceholder: 'Search tabs and bookmarks...', openTabs: 'Open tabs', closeAll: count => `Close all ${count} tabs`, bookmarks: 'Bookmarks', todoList: 'Todo List', addTask: 'Add task', todoPlaceholder: 'What needs to be done?', dueDate: 'Due date', add: 'Add', links: 'Links', addLink: 'Add link', toDo: 'To Do', completed: 'Completed', nextStep: 'Your next step will show up here.', completedHint: 'Completed tasks stay here for reference.', emptyTitle: 'Tabs cleared', emptySubtitle: 'You can focus now', noSearchResults: query => `No tabs or bookmarks match “${query}”`, domainCount: count => `${count} domain${count !== 1 ? 's' : ''}`, more: count => `${count} more`, tabs: 'tabs', closeThisTab: 'Close this tab', cardActions: 'Card actions', activeStats: count => `${count} active`, completedStats: count => `${count} completed`, activeSuffix: 'active', completedSuffix: 'completed', edit: 'Edit', editTodo: 'Edit todo', delete: 'Delete', name: 'Name', cancel: 'Cancel', save: 'Save', relatedLinks: 'Related links', completeTodo: text => `Complete ${text}`, reactivateTodo: text => `Reactivate ${text}`, linkInvalid: 'Links must use http:// or https://', linkOpenFailed: 'Could not open link', enterName: 'Enter a todo name', bookmarkOpened: 'Bookmark opened', tabClosed: 'Tab closed', duplicatesClosed: 'Duplicates closed', allTabsClosed: 'All tabs closed', folderReorderFailed: 'Could not reorder folder', bookmarkSaved: 'Bookmark saved', bookmarkSaveFailed: 'Could not save bookmark', imageTooLarge: 'Choose an image under 20MB', backgroundUpdated: 'Background updated', backgroundUpdateFailed: 'Background update failed', backgroundCleared: 'Background cleared',
+    today: 'Today', tomorrow: 'Tomorrow', daysAfter: count => `${count} days`, overdue: count => `${count}d overdue`, completedAt: date => `Completed ${date}`,
+  },
+};
+
+function t(key, ...args) {
+  const language = currentAppearance?.language === 'en' ? 'en' : 'zh';
+  if (key === 'closeAll' && args.length === 0) return language === 'en' ? 'Close all tabs' : '关闭全部标签页';
+  if (key === 'closeExtras') return language === 'en' ? 'Close extra Tab Out pages' : '关闭多余 Tab Out';
+  const value = I18N[language][key] ?? I18N.en[key] ?? key;
+  return typeof value === 'function' ? value(...args) : value;
+}
 
 const MAX_BACKGROUND_IMAGE_SIZE = 20 * 1024 * 1024;
 const BACKGROUND_DB_NAME = 'tabOutAppearance';
@@ -186,10 +208,6 @@ const CUSTOM_COLOR_FIELDS = [
   '--muted',
   '--accent-amber',
   '--accent-sage',
-  '--accent-slate',
-  '--accent-rose',
-  '--status-active',
-  '--status-cooling',
   '--status-abandoned',
   '--on-accent',
 ];
@@ -220,6 +238,96 @@ function createCustomPalette(colors) {
 }
 
 let currentAppearance = { ...DEFAULT_APPEARANCE };
+
+function applyLanguage(language = currentAppearance.language) {
+  const nextLanguage = language === 'en' ? 'en' : 'zh';
+  currentAppearance.language = nextLanguage;
+  document.documentElement.lang = nextLanguage === 'en' ? 'en' : 'zh-CN';
+
+  const setText = (selector, value) => {
+    const element = document.querySelector(selector);
+    if (element) element.textContent = value;
+  };
+
+  setText('.appearance-heading strong', t('appearance'));
+  setText('.appearance-heading span', t('appearanceHint'));
+  setText('#chooseBackgroundBtn', t('chooseImage'));
+  setText('#clearBackgroundBtn', t('clear'));
+  setText('.appearance-range > span', t('mask'));
+  setText('.appearance-switch strong', t('effects'));
+  setText('.appearance-switch small', t('effectsHint'));
+  setText('.language-control strong', t('language'));
+  setText('.custom-colors-heading strong', t('customColors'));
+  setText('.custom-colors-heading span', t('customColorsHint'));
+  const customColorLabels = ['textColor', 'surface', 'border', 'mutedText', 'primary', 'secondary', 'dangerColor', 'onPrimary'];
+  document.querySelectorAll('.custom-color-control > span').forEach((element, index) => {
+    const key = customColorLabels[index];
+    if (key) element.textContent = t(key);
+  });
+  setText('.todo-sidebar .sidebar-title', t('todoList'));
+  setText('.bookmarks-sidebar .sidebar-title', t('bookmarks'));
+  const bookmarksToggle = document.querySelector('[data-sidebar="bookmarks"]');
+  if (bookmarksToggle) bookmarksToggle.setAttribute('aria-label', nextLanguage === 'en' ? 'Collapse bookmarks' : '收起书签');
+  const todoToggle = document.querySelector('[data-sidebar="todo"]');
+  if (todoToggle) todoToggle.setAttribute('aria-label', nextLanguage === 'en' ? 'Expand todo list' : '展开待办清单');
+  setText('.todo-form-trigger strong', t('addTask'));
+  const todoInput = document.getElementById('todoInput');
+  if (todoInput) todoInput.placeholder = t('todoPlaceholder');
+  const dueDateInput = document.getElementById('todoDueDate');
+  if (dueDateInput) {
+    dueDateInput.title = t('dueDate');
+    dueDateInput.setAttribute('aria-label', t('dueDate'));
+  }
+  const dateClear = document.querySelector('.todo-date-clear');
+  if (dateClear) {
+    dateClear.title = nextLanguage === 'en' ? 'Clear date' : '清除日期';
+    dateClear.setAttribute('aria-label', nextLanguage === 'en' ? 'Clear due date' : '清除截止日期');
+  }
+  document.querySelectorAll('.todo-link-label').forEach(input => { input.placeholder = nextLanguage === 'en' ? 'Label' : '名称'; });
+  document.querySelectorAll('.todo-link-url').forEach(input => { input.setAttribute('aria-label', nextLanguage === 'en' ? 'Link URL' : '链接地址'); });
+  document.querySelectorAll('.todo-link-remove-btn').forEach(button => {
+    button.title = nextLanguage === 'en' ? 'Remove link' : '删除链接';
+    button.setAttribute('aria-label', nextLanguage === 'en' ? 'Remove link' : '删除链接');
+  });
+  document.querySelectorAll('.todo-links-editor-heading > span').forEach(element => { element.textContent = t('links'); });
+  document.querySelectorAll('[data-action="add-link-row"], [data-action="add-edit-link"]').forEach(button => { button.textContent = `+ ${t('addLink')}`; });
+  setText('.todo-section.active-section .todo-section-title', t('toDo'));
+  setText('.todo-section.completed-section .todo-section-title', t('completed'));
+  document.querySelectorAll('[data-action="close-tabout-dupes"] .action-label').forEach(element => { element.textContent = t('closeExtras'); });
+  const appearanceToggle = document.getElementById('appearanceToggle');
+  if (appearanceToggle) {
+    appearanceToggle.title = t('appearance');
+    appearanceToggle.setAttribute('aria-label', nextLanguage === 'en' ? 'Open appearance settings' : '打开外观设置');
+  }
+  const searchToggle = document.getElementById('searchToggle');
+  if (searchToggle) {
+    searchToggle.title = nextLanguage === 'en' ? 'Search tabs and bookmarks' : '搜索标签页和书签';
+    searchToggle.setAttribute('aria-label', nextLanguage === 'en' ? 'Search open tabs and bookmarks' : '搜索标签页和书签');
+  }
+  const searchClear = document.getElementById('searchClear');
+  if (searchClear) searchClear.setAttribute('aria-label', nextLanguage === 'en' ? 'Clear search' : '清除搜索');
+  const appearancePanel = document.getElementById('appearancePanel');
+  if (appearancePanel) appearancePanel.setAttribute('aria-label', nextLanguage === 'en' ? 'Appearance settings' : '外观设置');
+  const paletteNames = nextLanguage === 'en'
+    ? { forest: 'Forest', slate: 'Slate', dusk: 'Dusk', ocean: 'Ocean', plum: 'Plum', graphite: 'Graphite', mint: 'Mint', custom: 'Custom' }
+    : { forest: '森林', slate: '石板', dusk: '暮色', ocean: '海洋', plum: '梅紫', graphite: '石墨', mint: '薄荷', custom: '自定义' };
+  document.querySelectorAll('.palette-swatch').forEach(button => {
+    const name = paletteNames[button.dataset.palette] || button.dataset.palette;
+    button.title = name;
+    button.setAttribute('aria-label', `${name}${nextLanguage === 'en' ? ' palette' : '配色'}`);
+  });
+  setText('#activeEmpty', t('nextStep'));
+  setText('#completedEmpty', t('completedHint'));
+  setText('#todoEditTitle', t('editTodo'));
+  setText('#todoEditForm .todo-edit-field:first-of-type > span', t('name'));
+  setText('#todoEditForm .todo-edit-field:nth-of-type(2) > span', t('dueDate'));
+  setText('[data-action="cancel-edit"]', t('cancel'));
+  setText('#todoEditForm button[type="submit"]', t('save'));
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) searchInput.placeholder = t('searchPlaceholder');
+  const languageSelect = document.getElementById('languageSelect');
+  if (languageSelect) languageSelect.value = nextLanguage;
+}
 let cursorStarTrailCleanup = null;
 let closeSoundContext = null;
 let closeSoundBuffer = null;
@@ -558,13 +666,11 @@ function checkAndShowEmptyState() {
           <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
         </svg>
       </div>
-      <div class="empty-title">Inbox zero, but for tabs.</div>
-      <div class="empty-subtitle">You're free.</div>
+      <div class="empty-title">${t('emptyTitle')}</div>
+      <div class="empty-subtitle">${t('emptySubtitle')}</div>
     </div>
   `;
 
-  const countEl = document.getElementById('openTabsSectionCount');
-  if (countEl) countEl.textContent = '0 domains';
 }
 
 /**
@@ -589,7 +695,7 @@ function renderTimeDisplay() {
  * getDateDisplay() - "Friday, April 4, 2026"
  */
 function getDateDisplay() {
-  return new Date().toLocaleDateString('en-US', {
+  return new Date().toLocaleDateString(currentAppearance.language === 'en' ? 'en-US' : 'zh-CN', {
     weekday: 'long',
     year:    'numeric',
     month:   'long',
@@ -842,27 +948,6 @@ function getRealTabs() {
   });
 }
 
-/**
- * checkTabOutDupes()
- *
- * Counts how many Tab Out pages are open. If more than 1,
- * shows a banner offering to close the extras.
- */
-function checkTabOutDupes() {
-  const tabOutTabs = openTabs.filter(t => t.isTabOut);
-  const banner  = document.getElementById('tabOutDupeBanner');
-  const countEl = document.getElementById('tabOutDupeCount');
-  if (!banner) return;
-
-  if (tabOutTabs.length > 1) {
-    if (countEl) countEl.textContent = tabOutTabs.length;
-    banner.style.display = 'flex';
-  } else {
-    banner.style.display = 'none';
-  }
-}
-
-
 /* ----------------------------------------------------------------
    OVERFLOW CHIPS ("+N more" expand button in domain cards)
    ---------------------------------------------------------------- */
@@ -882,7 +967,7 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <div class="chip-actions">
-        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
+        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="${t('closeThisTab')}">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
       </div>
@@ -892,7 +977,7 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
   return `
     <div class="page-chips-overflow" style="display:none">${hiddenChips}</div>
     <div class="page-chip page-chip-overflow clickable" data-action="expand-chips">
-      <span class="chip-text">+${hiddenTabs.length} more</span>
+      <span class="chip-text">${t('more', hiddenTabs.length)}</span>
     </div>`;
 }
 
@@ -920,7 +1005,8 @@ function renderDomainCard(group) {
   const hasDupes   = dupeUrls.length > 0;
   const totalExtras = dupeUrls.reduce((s, [, c]) => s + c - 1, 0);
 
-  const tabBadge = `<span class="card-tab-count" aria-label="${tabCount} tab${tabCount !== 1 ? 's' : ''} open">${tabCount}</span>`;
+  const tabWord = currentAppearance.language === 'en' ? `tab${tabCount !== 1 ? 's' : ''}` : '个标签页';
+  const tabBadge = `<span class="card-tab-count" aria-label="${tabCount} ${tabWord}">${tabCount}</span>`;
 
   const dupeUrlsEncoded = dupeUrls.map(([url]) => encodeURIComponent(url)).join(',');
 
@@ -953,7 +1039,7 @@ function renderDomainCard(group) {
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" data-favicon data-domain="${domain}">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <div class="chip-actions">
-        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close this tab">
+        <button class="chip-action chip-close" data-action="close-single-tab" data-tab-url="${safeUrl}" title="${currentAppearance.language === 'en' ? 'Close this tab' : '关闭此标签页'}">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
         </button>
       </div>
@@ -961,12 +1047,12 @@ function renderDomainCard(group) {
   }).join('') + (extraCount > 0 ? buildOverflowChips(uniqueTabs.slice(8), urlCounts) : '');
 
   const cardTools = `
-    <div class="card-tools" aria-label="Card actions">
-      <button class="card-action card-action-close" data-action="close-domain-tabs" data-domain-id="${stableId}" aria-label="Close all ${tabCount} tabs" title="Close all ${tabCount} tabs">
+    <div class="card-tools" aria-label="${currentAppearance.language === 'en' ? 'Card actions' : '卡片操作'}">
+      <button class="card-action card-action-close" data-action="close-domain-tabs" data-domain-id="${stableId}" aria-label="${currentAppearance.language === 'en' ? `Close all ${tabCount} tabs` : `关闭全部 ${tabCount} 个标签页`}" title="${currentAppearance.language === 'en' ? `Close all ${tabCount} tabs` : `关闭全部 ${tabCount} 个标签页`}">
         ${ICONS.close}
       </button>
       ${hasDupes ? `
-        <button class="card-action card-action-duplicate" data-action="dedup-keep-one" data-dupe-urls="${dupeUrlsEncoded}" aria-label="Close ${totalExtras} duplicate tab${totalExtras !== 1 ? 's' : ''}, keep one" title="Close ${totalExtras} duplicate tab${totalExtras !== 1 ? 's' : ''}, keep one">
+        <button class="card-action card-action-duplicate" data-action="dedup-keep-one" data-dupe-urls="${dupeUrlsEncoded}" aria-label="${currentAppearance.language === 'en' ? `Close ${totalExtras} duplicate tabs, keep one` : `关闭 ${totalExtras} 个重复标签页，保留一个`}" title="${currentAppearance.language === 'en' ? `Close ${totalExtras} duplicate tabs, keep one` : `关闭 ${totalExtras} 个重复标签页，保留一个`}">
           ${ICONS.duplicate}
           <span class="card-action-count">${totalExtras}</span>
         </button>` : ''}
@@ -979,7 +1065,7 @@ function renderDomainCard(group) {
         <div class="mission-top">
           <div class="mission-heading">
             ${tabBadge}
-            <span class="mission-name">${isLanding ? 'Homepages' : (group.label || friendlyDomain(group.domain))}</span>
+            <span class="mission-name">${isLanding ? (currentAppearance.language === 'en' ? 'Homepages' : '首页') : (group.label || friendlyDomain(group.domain))}</span>
           </div>
           ${cardTools}
         </div>
@@ -987,7 +1073,7 @@ function renderDomainCard(group) {
       </div>
       <div class="mission-meta">
         <div class="mission-page-count">${tabCount}</div>
-        <div class="mission-page-label">tabs</div>
+        <div class="mission-page-label">${currentAppearance.language === 'en' ? 'tabs' : '标签页'}</div>
       </div>
     </div>`;
 }
@@ -1063,13 +1149,13 @@ function renderBookmarkGroup(group, { depth, path, hideHeader = false }) {
   if (count === 0 && !group.id) return '';
 
   const isOpen = hideHeader;
-  const groupName = group.name || 'Untitled folder';
+  const groupName = group.name || (currentAppearance.language === 'en' ? 'Untitled folder' : '未命名文件夹');
   const safeGroupName = escapeHtml(groupName);
   const safeFolderId = escapeAttr(group.id || '');
   const safeParentId = escapeAttr(group.parentId || '');
   const canReorder = !group.isRoot && !hideHeader;
   const dragHandleHtml = canReorder ? `
-      <button class="drawer-group-drag-handle" type="button" draggable="true" aria-label="Drag to reorder ${escapeAttr(groupName)}" title="Drag to reorder">
+      <button class="drawer-group-drag-handle" type="button" draggable="true" aria-label="${currentAppearance.language === 'en' ? `Drag to reorder ${escapeAttr(groupName)}` : `拖动排序${escapeAttr(groupName)}`}" title="${currentAppearance.language === 'en' ? 'Drag to reorder' : '拖动排序'}">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="8" cy="6" r="1.5" /><circle cx="16" cy="6" r="1.5" />
           <circle cx="8" cy="12" r="1.5" /><circle cx="16" cy="12" r="1.5" />
@@ -1081,7 +1167,7 @@ function renderBookmarkGroup(group, { depth, path, hideHeader = false }) {
     <div class="drawer-group-header bookmark-drop-target" data-bookmark-folder-id="${safeFolderId}" data-bookmark-parent-id="${safeParentId}" aria-expanded="${isOpen ? 'true' : 'false'}">
       <span class="drawer-group-name">${safeGroupName}</span>
       <span class="drawer-group-count">${count}</span>
-      <button class="drawer-group-toggle" type="button" aria-label="Toggle ${escapeAttr(groupName)}">
+      <button class="drawer-group-toggle" type="button" aria-label="${currentAppearance.language === 'en' ? `Toggle ${escapeAttr(groupName)}` : `展开或收起${escapeAttr(groupName)}`}">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
@@ -1130,7 +1216,7 @@ function renderBookmarkItems(bookmarks) {
       console.warn('[tab-out] Invalid bookmark URL:', bookmark.url);
     }
 
-    const title = bookmark.title || bookmark.url || 'Untitled';
+    const title = bookmark.title || bookmark.url || (currentAppearance.language === 'en' ? 'Untitled' : '未命名');
     const safeUrl = escapeAttr(bookmark.url || '');
     const safeTitle = escapeAttr(title);
     const safeDomain = escapeHtml(domain);
@@ -1449,24 +1535,24 @@ async function renderStaticDashboard() {
   // --- Render domain cards ---
   const openTabsSection      = document.getElementById('openTabsSection');
   const openTabsMissionsEl   = document.getElementById('openTabsMissions');
-  const openTabsSectionCount = document.getElementById('openTabsSectionCount');
-  const openTabsSectionTitle = document.getElementById('openTabsSectionTitle');
+  const openTabsSectionActions = document.getElementById('openTabsSectionActions');
 
   if (domainGroups.length > 0 && openTabsSection) {
-    if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Open tabs';
-    openTabsSectionCount.innerHTML = `${domainGroups.length} domain${domainGroups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${realTabs.length} tabs</button>`;
+    const tabOutCount = openTabs.filter(tab => tab.isTabOut).length;
+    const actionButtons = [];
+    if (tabOutCount > 1) {
+      actionButtons.push(`<button class="action-btn close-tabs close-tabout-btn" data-action="close-tabout-dupes" aria-label="${t('closeExtras')}" title="${t('closeExtras')}">${ICONS.duplicate}<span class="action-label">${t('closeExtras')}</span></button>`);
+    }
+    if (realTabs.length > 0) {
+      actionButtons.push(`<button class="action-btn close-tabs" data-action="close-all-open-tabs" aria-label="${t('closeAll')}" title="${t('closeAll')}">${ICONS.close}<span class="action-label">${t('closeAll')}</span></button>`);
+    }
+    if (openTabsSectionActions) openTabsSectionActions.innerHTML = actionButtons.join('');
     openTabsMissionsEl.innerHTML = domainGroups.map(g => renderDomainCard(g)).join('');
     openTabsSection.style.display = 'block';
   } else if (openTabsSection) {
+    if (openTabsSectionActions) openTabsSectionActions.replaceChildren();
     openTabsSection.style.display = 'none';
   }
-
-  // --- Header stats ---
-  const statTabs = document.getElementById('statTabs');
-  if (statTabs) statTabs.textContent = openTabs.length;
-
-  // --- Check for duplicate Tab Out tabs ---
-  checkTabOutDupes();
 
   // --- Render bookmarks sidebar ---
   await renderBookmarksSidebar();
@@ -1494,13 +1580,13 @@ document.addEventListener('click', async (e) => {
     e.preventDefault();
     const url = normalizeHttpUrl(todoLink.getAttribute('href'));
     if (!url) {
-      showToast('This link is not valid');
+      showToast(t('linkInvalid'));
       return;
     }
     try {
       await chrome.tabs.create({ url });
     } catch (err) {
-      showToast('Could not open link');
+      showToast(t('linkOpenFailed'));
     }
     return;
   }
@@ -1523,7 +1609,7 @@ document.addEventListener('click', async (e) => {
     const dueDateInput = document.getElementById('todoDueDate');
     const linksResult = collectTodoLinks(document.getElementById('todoLinkFields'));
     if (linksResult.invalid) {
-      showToast('Links must use http:// or https://');
+      showToast(t('linkInvalid'));
       return;
     }
     const added = await addTodo(input.value, dueDateInput.value, linksResult.links);
@@ -1587,15 +1673,8 @@ document.addEventListener('click', async (e) => {
   if (action === 'close-tabout-dupes') {
     await closeTabOutDupes();
     playCloseSound();
-    const banner = document.getElementById('tabOutDupeBanner');
-    if (banner) {
-      const rect = banner.getBoundingClientRect();
-      shootClosingStars(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      banner.style.transition = 'opacity 0.4s';
-      banner.style.opacity = '0';
-      setTimeout(() => { banner.style.display = 'none'; banner.style.opacity = '1'; }, 400);
-    }
-    showToast('Closed extra Tab Out tabs');
+    await renderDashboard();
+    showToast(currentAppearance.language === 'en' ? 'Closed extra Tab Out tabs' : '已关闭多余标签页');
     return;
   }
 
@@ -1629,7 +1708,7 @@ document.addEventListener('click', async (e) => {
     localStorage.setItem('bookmarkOpenTimes', JSON.stringify(openTimes));
 
     await chrome.tabs.update({ url });
-    showToast('Bookmark opened');
+    showToast(t('bookmarkOpened'));
     return;
   }
 
@@ -1669,10 +1748,7 @@ document.addEventListener('click', async (e) => {
     }
 
     // Update header stats
-    const statTabs = document.getElementById('statTabs');
-    if (statTabs) statTabs.textContent = openTabs.length;
-
-    showToast('Tab closed');
+    showToast(t('tabClosed'));
     return;
   }
 
@@ -1707,8 +1783,6 @@ document.addEventListener('click', async (e) => {
     const groupLabel = group.domain === '__landing-pages__' ? 'Homepages' : (group.label || friendlyDomain(group.domain));
     showToast(`Closed ${urls.length} tab${urls.length !== 1 ? 's' : ''} from ${groupLabel}`);
 
-    const statTabs = document.getElementById('statTabs');
-    if (statTabs) statTabs.textContent = openTabs.length;
     return;
   }
 
@@ -1739,7 +1813,7 @@ document.addEventListener('click', async (e) => {
       card.classList.add('has-neutral-bar');
     }
 
-    showToast('Closed duplicates, kept one copy each');
+    showToast(t('duplicatesClosed'));
     return;
   }
 
@@ -1755,7 +1829,7 @@ document.addEventListener('click', async (e) => {
       animateCardOut(c);
     });
 
-    showToast('All tabs closed. Fresh start.');
+    showToast(t('allTabsClosed'));
     return;
   }
 });
@@ -1897,18 +1971,19 @@ function formatDate(dateStr) {
   
   const diffDays = Math.floor((todoDate - today) / (1000 * 60 * 60 * 24));
   
-  if (diffDays === 0) return { text: 'Today', class: 'today' };
-  if (diffDays === 1) return { text: 'Tomorrow', class: '' };
-  if (diffDays < 0) return { text: `${Math.abs(diffDays)}d overdue`, class: 'overdue' };
-  
-  const options = { month: 'short', day: 'numeric' };
-  return { text: date.toLocaleDateString('en-US', options), class: '' };
+  if (diffDays < 0) return { text: t('overdue', Math.abs(diffDays)), class: 'deadline-red' };
+  if (diffDays <= 1) return { text: diffDays === 0 ? t('today') : t('tomorrow'), class: 'deadline-red' };
+  if (diffDays <= 3) return { text: t('daysAfter', diffDays), class: 'deadline-yellow' };
+  if (diffDays <= 7) return { text: t('daysAfter', diffDays), class: 'deadline-green' };
+
+  const options = { month: 'numeric', day: 'numeric' };
+  return { text: date.toLocaleDateString(currentAppearance.language === 'en' ? 'en-US' : 'zh-CN', options), class: 'deadline-blue' };
 }
 
 function formatCompletedDate(dateStr) {
   if (!dateStr) return null;
   const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString(currentAppearance.language === 'en' ? 'en-US' : 'zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function getTodoLinkLabel(url) {
@@ -1926,8 +2001,8 @@ function createTodoLinkRow(link = {}) {
   const labelInput = document.createElement('input');
   labelInput.type = 'text';
   labelInput.className = 'todo-link-label';
-  labelInput.placeholder = 'Label';
-  labelInput.setAttribute('aria-label', 'Link label');
+  labelInput.placeholder = currentAppearance.language === 'en' ? 'Label' : '名称';
+  labelInput.setAttribute('aria-label', currentAppearance.language === 'en' ? 'Link label' : '链接名称');
   labelInput.value = link.label || '';
 
   const urlInput = document.createElement('input');
@@ -1936,15 +2011,15 @@ function createTodoLinkRow(link = {}) {
   urlInput.placeholder = 'https://example.com';
   urlInput.inputMode = 'url';
   urlInput.autocomplete = 'url';
-  urlInput.setAttribute('aria-label', 'Link URL');
+  urlInput.setAttribute('aria-label', currentAppearance.language === 'en' ? 'Link URL' : '链接地址');
   urlInput.value = link.url || '';
 
   const removeButton = document.createElement('button');
   removeButton.type = 'button';
   removeButton.className = 'todo-link-remove-btn';
   removeButton.dataset.action = 'remove-link-row';
-  removeButton.title = 'Remove link';
-  removeButton.setAttribute('aria-label', 'Remove link');
+  removeButton.title = currentAppearance.language === 'en' ? 'Remove link' : '删除链接';
+  removeButton.setAttribute('aria-label', currentAppearance.language === 'en' ? 'Remove link' : '删除链接');
   removeButton.textContent = '×';
 
   row.append(labelInput, urlInput, removeButton);
@@ -2005,7 +2080,7 @@ function renderTodoItem(todo) {
   checkbox.checked = todo.completed;
   checkbox.dataset.action = 'toggle-todo';
   checkbox.dataset.todoId = todo.id;
-  checkbox.setAttribute('aria-label', todo.completed ? `Mark ${todo.text} as active` : `Complete ${todo.text}`);
+  checkbox.setAttribute('aria-label', todo.completed ? t('reactivateTodo', todo.text) : t('completeTodo', todo.text));
 
   const content = document.createElement('div');
   content.className = 'todo-content';
@@ -2029,7 +2104,7 @@ function renderTodoItem(todo) {
     if (completedDate) {
       const completed = document.createElement('span');
       completed.className = 'todo-completed-at';
-      completed.textContent = `Completed ${completedDate}`;
+      completed.textContent = t('completedAt', completedDate);
       meta.appendChild(completed);
     }
     content.appendChild(meta);
@@ -2038,7 +2113,7 @@ function renderTodoItem(todo) {
   if (todo.links.length > 0) {
     const links = document.createElement('div');
     links.className = 'todo-links';
-    links.setAttribute('aria-label', 'Related links');
+    links.setAttribute('aria-label', t('relatedLinks'));
     todo.links.forEach(link => {
       const anchor = document.createElement('a');
       anchor.className = 'todo-link';
@@ -2064,16 +2139,16 @@ function renderTodoItem(todo) {
   editButton.className = 'todo-action-btn todo-edit-btn';
   editButton.dataset.action = 'edit-todo';
   editButton.dataset.todoId = todo.id;
-  editButton.title = 'Edit';
-  editButton.setAttribute('aria-label', `Edit ${todo.text}`);
+  editButton.title = '编辑';
+  editButton.setAttribute('aria-label', `编辑${todo.text}`);
   editButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>';
 
   const deleteButton = document.createElement('button');
   deleteButton.className = 'todo-action-btn todo-delete-btn';
   deleteButton.dataset.action = 'delete-todo';
   deleteButton.dataset.todoId = todo.id;
-  deleteButton.title = 'Delete';
-  deleteButton.setAttribute('aria-label', `Delete ${todo.text}`);
+  deleteButton.title = '删除';
+  deleteButton.setAttribute('aria-label', `删除${todo.text}`);
   deleteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>';
 
   actions.append(editButton, deleteButton);
@@ -2157,7 +2232,7 @@ async function renderTodoSidebar() {
     const completedCountEl = document.createElement('span');
     completedCountEl.className = 'todo-completed-count';
     completedCountEl.textContent = completedCount;
-    todoStats.replaceChildren(activeCountEl, document.createTextNode(' active · '), completedCountEl, document.createTextNode(' completed'));
+    todoStats.replaceChildren(activeCountEl, document.createTextNode(` ${t('activeSuffix')} · `), completedCountEl, document.createTextNode(` ${t('completedSuffix')}`));
   }
 }
 
@@ -2174,27 +2249,27 @@ function showEditTodoModal(todo) {
     modal.setAttribute('aria-labelledby', 'todoEditTitle');
     modal.innerHTML = `
       <div class="todo-edit-content">
-        <div class="todo-edit-title" id="todoEditTitle">Edit Todo</div>
+        <div class="todo-edit-title" id="todoEditTitle">${t('editTodo')}</div>
         <form class="todo-edit-form" id="todoEditForm">
           <input type="hidden" id="todoEditId">
           <label class="todo-edit-field">
-            <span>Name</span>
-            <input type="text" id="todoEditText" class="todo-edit-input" placeholder="What needs to be done?" autocomplete="off">
+            <span>${t('name')}</span>
+            <input type="text" id="todoEditText" class="todo-edit-input" placeholder="${t('todoPlaceholder')}" autocomplete="off">
           </label>
           <label class="todo-edit-field">
-            <span>Due date</span>
+            <span>${t('dueDate')}</span>
             <input type="date" id="todoEditDueDate" class="todo-edit-due-date">
           </label>
           <div class="todo-links-editor todo-edit-links-editor">
             <div class="todo-links-editor-heading">
-              <span>Links</span>
-              <button type="button" class="todo-link-add-btn" data-action="add-edit-link">+ Add link</button>
+              <span>${t('links')}</span>
+              <button type="button" class="todo-link-add-btn" data-action="add-edit-link">+ ${t('addLink')}</button>
             </div>
             <div class="todo-link-fields" id="todoEditLinks"></div>
           </div>
           <div class="todo-edit-buttons">
-            <button type="button" class="todo-edit-btn cancel" data-action="cancel-edit">Cancel</button>
-            <button type="submit" class="todo-edit-btn primary">Save</button>
+            <button type="button" class="todo-edit-btn cancel" data-action="cancel-edit">${t('cancel')}</button>
+            <button type="submit" class="todo-edit-btn primary">${t('save')}</button>
           </div>
         </form>
       </div>
@@ -2224,7 +2299,7 @@ function closeEditTodoModal() {
 
 async function addTodo(text, dueDate, links = []) {
   if (!text.trim()) {
-    showToast('Enter a todo name');
+    showToast(t('enterName'));
     return false;
   }
   
@@ -2242,7 +2317,7 @@ async function addTodo(text, dueDate, links = []) {
   await saveTodos();
   await renderTodoSidebar();
   
-  showToast('Todo added');
+    showToast('已添加待办');
   return true;
 }
 
@@ -2256,12 +2331,12 @@ async function toggleTodo(id) {
   await saveTodos();
   await renderTodoSidebar();
   
-  showToast(todo.completed ? 'Todo completed!' : 'Todo reactivated');
+  showToast(todo.completed ? '已完成待办' : '已恢复待办');
 }
 
 async function updateTodo(id, text, dueDate, links = []) {
   if (!text.trim()) {
-    showToast('Enter a todo name');
+    showToast(t('enterName'));
     return false;
   }
   
@@ -2275,7 +2350,7 @@ async function updateTodo(id, text, dueDate, links = []) {
   await saveTodos();
   await renderTodoSidebar();
   
-  showToast('Todo updated');
+  showToast('已更新待办');
   return true;
 }
 
@@ -2284,7 +2359,7 @@ async function deleteTodo(id) {
   await saveTodos();
   await renderTodoSidebar();
   
-  showToast('Todo deleted');
+  showToast('已删除待办');
 }
 
 // ---- Todo edit form submit ----
@@ -2296,7 +2371,7 @@ document.addEventListener('submit', async (e) => {
     const dueDate = document.getElementById('todoEditDueDate').value;
     const linksResult = collectTodoLinks(document.getElementById('todoEditLinks'));
     if (linksResult.invalid) {
-      showToast('Links must use http:// or https://');
+      showToast(t('linkInvalid'));
       return;
     }
 
@@ -2460,7 +2535,7 @@ function setupBookmarkDropTargets() {
           await renderBookmarksSidebar();
         } catch (err) {
           console.error('[tab-out] Failed to reorder bookmark folder:', err);
-          showToast('Could not reorder folder');
+          showToast(t('folderReorderFailed'));
         }
         return;
       }
@@ -2475,10 +2550,10 @@ function setupBookmarkDropTargets() {
         const tab = JSON.parse(serializedTab);
         await saveTabToBookmarkFolder(folderId, tab);
         await renderBookmarksSidebar();
-        showToast('Saved to bookmarks');
+        showToast(t('bookmarkSaved'));
       } catch (err) {
         console.error('[tab-out] Failed to save dragged tab:', err);
-        showToast('Could not save bookmark');
+        showToast(t('bookmarkSaveFailed'));
       }
     });
   });
@@ -2772,7 +2847,7 @@ async function performSearch(query) {
   if (results.length === 0) {
     searchResults.innerHTML = `
       <div class="search-no-results">
-        No tabs or bookmarks found matching "${escapeHtml(query)}"
+        ${escapeHtml(t('noSearchResults', query))}
       </div>
     `;
     searchResults.classList.add('open');
@@ -2991,6 +3066,7 @@ function applyAppearance(settings) {
 
   document.documentElement.style.setProperty('--bg-mask-opacity', String(currentAppearance.mask / 100));
   setEffectsEnabled(currentAppearance.effectsEnabled);
+  applyLanguage(currentAppearance.language);
   refreshAutoContrast();
 
   syncAppearanceControls();
@@ -3000,6 +3076,7 @@ function syncAppearanceControls() {
   const maskRange = document.getElementById('backgroundMaskRange');
   const maskValue = document.getElementById('backgroundMaskValue');
   const effectsToggle = document.getElementById('effectsToggle');
+  const languageSelect = document.getElementById('languageSelect');
   const customColorsPanel = document.getElementById('customColorsPanel');
 
   if (maskRange) maskRange.value = String(currentAppearance.mask);
@@ -3018,6 +3095,7 @@ function syncAppearanceControls() {
   if (customColorsPanel) {
     customColorsPanel.hidden = currentAppearance.palette !== 'custom';
   }
+  if (languageSelect) languageSelect.value = currentAppearance.language === 'en' ? 'en' : 'zh';
 
   const customColors = normalizeCustomColors(currentAppearance.customColors);
   document.querySelectorAll('[data-color-var]').forEach(input => {
@@ -3217,9 +3295,10 @@ async function setupAppearanceHandlers() {
   const maskRange = document.getElementById('backgroundMaskRange');
   const paletteRow = document.getElementById('paletteRow');
   const effectsToggle = document.getElementById('effectsToggle');
+  const languageSelect = document.getElementById('languageSelect');
   const customColorsPanel = document.getElementById('customColorsPanel');
 
-  if (!panel || !toggle || !chooseBtn || !clearBtn || !input || !maskRange || !paletteRow || !effectsToggle || !customColorsPanel) return;
+  if (!panel || !toggle || !chooseBtn || !clearBtn || !input || !maskRange || !paletteRow || !effectsToggle || !languageSelect || !customColorsPanel) return;
 
   const { tabOutAppearance } = await chrome.storage.local.get('tabOutAppearance');
   applyAppearance(tabOutAppearance || DEFAULT_APPEARANCE);
@@ -3238,7 +3317,7 @@ async function setupAppearanceHandlers() {
     if (!file) return;
 
     if (file.size > MAX_BACKGROUND_IMAGE_SIZE) {
-      showToast('Choose an image under 20MB');
+      showToast(t('imageTooLarge'));
       input.value = '';
       return;
     }
@@ -3247,9 +3326,9 @@ async function setupAppearanceHandlers() {
       await saveBackgroundFile(file);
       applyBackgroundUrl(URL.createObjectURL(file));
       await saveAppearance({ hasBackgroundImage: true });
-      showToast('Background updated');
+      showToast(t('backgroundUpdated'));
     } catch {
-      showToast('Background update failed');
+      showToast(t('backgroundUpdateFailed'));
     }
 
     input.value = '';
@@ -3259,7 +3338,7 @@ async function setupAppearanceHandlers() {
     await clearBackgroundFile();
     applyBackgroundUrl('');
     await saveAppearance({ hasBackgroundImage: false });
-    showToast('Background cleared');
+    showToast(t('backgroundCleared'));
   });
 
   maskRange.addEventListener('input', async (e) => {
@@ -3268,6 +3347,12 @@ async function setupAppearanceHandlers() {
 
   effectsToggle.addEventListener('change', async (e) => {
     await saveAppearance({ effectsEnabled: e.target.checked });
+  });
+
+  languageSelect.addEventListener('change', async (e) => {
+    const language = e.target.value === 'en' ? 'en' : 'zh';
+    await saveAppearance({ language });
+    await renderDashboard();
   });
 
   paletteRow.addEventListener('click', async (e) => {

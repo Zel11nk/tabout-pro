@@ -3746,6 +3746,16 @@ html.effects-disabled input:not([type="checkbox"]):not([type="range"]) {
   font-weight: 700;
 }
 
+.language-control select {
+  min-width: 88px;
+  padding: 7px 10px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 10px;
+  background: var(--glass-control-bg);
+  color: var(--ink);
+  font: 600 11px var(--system-font);
+}
+
 .todo-form-trigger-icon {
   display: grid;
   place-items: center;
@@ -3797,9 +3807,13 @@ html.effects-disabled input:not([type="checkbox"]):not([type="range"]) {
 }
 
 .todo-add-btn::after {
-  content: 'Add';
+  content: '添加';
   font-size: 12px;
   font-weight: 700;
+}
+
+html[lang="en"] .todo-add-btn::after {
+  content: 'Add';
 }
 
 .todo-links-editor {
@@ -3930,22 +3944,36 @@ html.effects-disabled input:not([type="checkbox"]):not([type="range"]) {
   align-items: center;
   gap: 4px;
   max-width: 100%;
-  padding: 4px 7px;
-  border: 1px solid color-mix(in srgb, var(--accent-amber) 18%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent-amber) 8%, transparent);
+  padding: 3px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--accent-amber);
   font-size: 10px;
   font-weight: 650;
   line-height: 1.15;
   text-decoration: none;
   overflow-wrap: anywhere;
-  transition: background-color 160ms ease, transform 160ms var(--spring);
+  transition: color 160ms ease, transform 160ms var(--spring);
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.section-actions .action-btn {
+  white-space: nowrap;
 }
 
 .todo-link:hover,
 .todo-link:focus-visible {
-  background: color-mix(in srgb, var(--accent-amber) 16%, transparent);
+  background: transparent;
+  color: var(--ink);
+  text-decoration: underline;
   transform: translateY(-1px);
   outline: none;
 }
@@ -3961,8 +3989,63 @@ html.effects-disabled input:not([type="checkbox"]):not([type="range"]) {
 }
 
 .todo-action-btn {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--muted);
+}
+
+.todo-action-btn:hover,
+.todo-action-btn:focus-visible {
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: translateY(-1px);
+}
+
+.todo-action-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent-amber) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.todo-edit-btn:hover {
+  color: var(--accent-amber);
+}
+
+.todo-delete-btn:hover {
+  color: var(--status-abandoned);
+}
+
+/* Deadline colors stay fixed so urgency remains readable across custom themes. */
+.todo-due-date-badge.deadline-red {
+  color: #c0392b !important;
+  background: #fde8e6 !important;
+  border-color: #f4b8b2 !important;
+}
+
+.todo-due-date-badge.deadline-yellow {
+  color: #9a6700 !important;
+  background: #fff4cc !important;
+  border-color: #f0d27a !important;
+}
+
+.todo-due-date-badge.deadline-green {
+  color: #2f7d43 !important;
+  background: #e3f4e7 !important;
+  border-color: #a8d7b2 !important;
+}
+
+.todo-due-date-badge.deadline-blue {
+  color: #2166a5 !important;
+  background: #e4f0fb !important;
+  border-color: #a9c9e8 !important;
 }
 
 .todo-empty {

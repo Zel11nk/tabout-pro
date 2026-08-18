@@ -37,12 +37,12 @@ const I18N = {
   zh: {
     appearance: '外观', appearanceHint: '自定义你的空间', chooseImage: '选择图片', clear: '清除', mask: '遮罩', effects: '效果', effectsHint: '鼠标轨迹、动效和声音', language: '语言', customColors: '自定义颜色', customColorsHint: '配置主题颜色', textColor: '文字', surface: '表面', border: '边框', mutedText: '次要文字', primary: '主色', secondary: '次色', dangerColor: '危险', onPrimary: '主色上的文字', chinese: '中文', english: 'English',
     searchPlaceholder: '搜索标签页和书签…', openTabs: '打开的标签页', closeAll: count => `关闭全部 ${count} 个标签页`, bookmarks: '书签', todoList: '待办清单', addTask: '添加待办', todoPlaceholder: '要做什么？', dueDate: '截止日期', add: '添加', links: '链接', addLink: '添加链接', toDo: '待处理', completed: '已完成', nextStep: '下一步会显示在这里', completedHint: '已完成的事项会保留在这里', emptyTitle: '标签页已清空', emptySubtitle: '现在可以专心做事了', noSearchResults: query => `没有找到与“${query}”匹配的标签页或书签`, domainCount: count => `${count} 个域名`, more: count => `还有 ${count} 个`, tabs: '标签页', closeThisTab: '关闭此标签页', cardActions: '卡片操作', activeStats: count => `${count} 项待处理`, completedStats: count => `${count} 项已完成`, activeSuffix: '项待处理', completedSuffix: '项已完成', edit: '编辑', editTodo: '编辑待办', delete: '删除', name: '名称', cancel: '取消', save: '保存', relatedLinks: '相关链接', completeTodo: text => `完成${text}`, reactivateTodo: text => `恢复${text}`, linkInvalid: '链接必须使用 http:// 或 https://', linkOpenFailed: '链接打开失败', enterName: '请输入待办名称', bookmarkOpened: '已打开书签', tabClosed: '已关闭标签页', duplicatesClosed: '已关闭重复标签页', allTabsClosed: '所有标签页已关闭', folderReorderFailed: '文件夹排序失败', bookmarkSaved: '已保存书签', bookmarkSaveFailed: '保存书签失败', imageTooLarge: '请选择 20MB 以内的图片', backgroundUpdated: '背景已更新', backgroundUpdateFailed: '背景更新失败', backgroundCleared: '背景已清除',
-    today: '今天', tomorrow: '明天', daysAfter: count => `${count} 天后`, overdue: count => `逾期 ${count} 天`, completedAt: date => `完成于 ${date}`,
+    today: '今天', tomorrow: '明天', daysAfter: count => `${count} 天后`, overdue: count => `逾期 ${count} 天`, completedAt: date => `完成于 ${date}`, priority: '优先级', urgent: '紧急', high: '高', normal: '普通', low: '低', lowest: '最低',
   },
   en: {
     appearance: 'Appearance', appearanceHint: 'Personalize your space', chooseImage: 'Choose image', clear: 'Clear', mask: 'Mask', effects: 'Effects', effectsHint: 'Cursor trail, motion and sound', language: 'Language', customColors: 'Custom colors', customColorsHint: 'Configure theme colors', textColor: 'Text', surface: 'Surface', border: 'Border', mutedText: 'Muted text', primary: 'Primary', secondary: 'Secondary', dangerColor: 'Danger', onPrimary: 'On primary', chinese: '中文', english: 'English',
     searchPlaceholder: 'Search tabs and bookmarks...', openTabs: 'Open tabs', closeAll: count => `Close all ${count} tabs`, bookmarks: 'Bookmarks', todoList: 'Todo List', addTask: 'Add task', todoPlaceholder: 'What needs to be done?', dueDate: 'Due date', add: 'Add', links: 'Links', addLink: 'Add link', toDo: 'To Do', completed: 'Completed', nextStep: 'Your next step will show up here.', completedHint: 'Completed tasks stay here for reference.', emptyTitle: 'Tabs cleared', emptySubtitle: 'You can focus now', noSearchResults: query => `No tabs or bookmarks match “${query}”`, domainCount: count => `${count} domain${count !== 1 ? 's' : ''}`, more: count => `${count} more`, tabs: 'tabs', closeThisTab: 'Close this tab', cardActions: 'Card actions', activeStats: count => `${count} active`, completedStats: count => `${count} completed`, activeSuffix: 'active', completedSuffix: 'completed', edit: 'Edit', editTodo: 'Edit todo', delete: 'Delete', name: 'Name', cancel: 'Cancel', save: 'Save', relatedLinks: 'Related links', completeTodo: text => `Complete ${text}`, reactivateTodo: text => `Reactivate ${text}`, linkInvalid: 'Links must use http:// or https://', linkOpenFailed: 'Could not open link', enterName: 'Enter a todo name', bookmarkOpened: 'Bookmark opened', tabClosed: 'Tab closed', duplicatesClosed: 'Duplicates closed', allTabsClosed: 'All tabs closed', folderReorderFailed: 'Could not reorder folder', bookmarkSaved: 'Bookmark saved', bookmarkSaveFailed: 'Could not save bookmark', imageTooLarge: 'Choose an image under 20MB', backgroundUpdated: 'Background updated', backgroundUpdateFailed: 'Background update failed', backgroundCleared: 'Background cleared',
-    today: 'Today', tomorrow: 'Tomorrow', daysAfter: count => `${count} days`, overdue: count => `${count}d overdue`, completedAt: date => `Completed ${date}`,
+    today: 'Today', tomorrow: 'Tomorrow', daysAfter: count => `${count} days`, overdue: count => `${count}d overdue`, completedAt: date => `Completed ${date}`, priority: 'Priority', urgent: 'Urgent', high: 'High', normal: 'Normal', low: 'Low', lowest: 'Lowest',
   },
 };
 
@@ -270,18 +270,20 @@ function applyLanguage(language = currentAppearance.language) {
   if (bookmarksToggle) bookmarksToggle.setAttribute('aria-label', nextLanguage === 'en' ? 'Collapse bookmarks' : '收起书签');
   const todoToggle = document.querySelector('[data-sidebar="todo"]');
   if (todoToggle) todoToggle.setAttribute('aria-label', nextLanguage === 'en' ? 'Expand todo list' : '展开待办清单');
-  setText('.todo-form-trigger strong', t('addTask'));
-  const todoInput = document.getElementById('todoInput');
-  if (todoInput) todoInput.placeholder = t('todoPlaceholder');
-  const dueDateInput = document.getElementById('todoDueDate');
+  setText('.todo-add-trigger span:first-child', t('addTask'));
+  setText('#todoAddTitle', t('addTask'));
+  setText('#todoAddForm .todo-edit-field:first-of-type > span', t('name'));
+  setText('#todoAddForm .todo-edit-field:nth-of-type(2) > span', t('priority'));
+  setText('#todoAddForm .todo-edit-field:nth-of-type(3) > span', t('dueDate'));
+  setText('#todoAddForm .todo-links-editor-heading > span', t('links'));
+  setText('[data-action="cancel-add"]', t('cancel'));
+  setText('#todoAddForm button[type="submit"]', t('add'));
+  const todoAddInput = document.getElementById('todoAddInput');
+  if (todoAddInput) todoAddInput.placeholder = t('todoPlaceholder');
+  const dueDateInput = document.getElementById('todoAddDueDate');
   if (dueDateInput) {
     dueDateInput.title = t('dueDate');
     dueDateInput.setAttribute('aria-label', t('dueDate'));
-  }
-  const dateClear = document.querySelector('.todo-date-clear');
-  if (dateClear) {
-    dateClear.title = nextLanguage === 'en' ? 'Clear date' : '清除日期';
-    dateClear.setAttribute('aria-label', nextLanguage === 'en' ? 'Clear due date' : '清除截止日期');
   }
   document.querySelectorAll('.todo-link-label').forEach(input => { input.placeholder = nextLanguage === 'en' ? 'Label' : '名称'; });
   document.querySelectorAll('.todo-link-url').forEach(input => { input.setAttribute('aria-label', nextLanguage === 'en' ? 'Link URL' : '链接地址'); });
@@ -290,7 +292,7 @@ function applyLanguage(language = currentAppearance.language) {
     button.setAttribute('aria-label', nextLanguage === 'en' ? 'Remove link' : '删除链接');
   });
   document.querySelectorAll('.todo-links-editor-heading > span').forEach(element => { element.textContent = t('links'); });
-  document.querySelectorAll('[data-action="add-link-row"], [data-action="add-edit-link"]').forEach(button => { button.textContent = `+ ${t('addLink')}`; });
+  document.querySelectorAll('[data-action="add-edit-link"], [data-action="add-todo-link"]').forEach(button => { button.textContent = `+ ${t('addLink')}`; });
   setText('.todo-section.active-section .todo-section-title', t('toDo'));
   setText('.todo-section.completed-section .todo-section-title', t('completed'));
   document.querySelectorAll('[data-action="close-tabout-dupes"] .action-label').forEach(element => { element.textContent = t('closeExtras'); });
@@ -316,11 +318,10 @@ function applyLanguage(language = currentAppearance.language) {
     button.title = name;
     button.setAttribute('aria-label', `${name}${nextLanguage === 'en' ? ' palette' : '配色'}`);
   });
-  setText('#activeEmpty', t('nextStep'));
-  setText('#completedEmpty', t('completedHint'));
   setText('#todoEditTitle', t('editTodo'));
   setText('#todoEditForm .todo-edit-field:first-of-type > span', t('name'));
-  setText('#todoEditForm .todo-edit-field:nth-of-type(2) > span', t('dueDate'));
+  setText('#todoEditForm .todo-edit-field:nth-of-type(2) > span', t('priority'));
+  setText('#todoEditForm .todo-edit-field:nth-of-type(3) > span', t('dueDate'));
   setText('[data-action="cancel-edit"]', t('cancel'));
   setText('#todoEditForm button[type="submit"]', t('save'));
   const searchInput = document.getElementById('searchInput');
@@ -1575,6 +1576,15 @@ async function renderDashboard() {
    ---------------------------------------------------------------- */
 
 document.addEventListener('click', async (e) => {
+  if (e.target.id === 'todoAddModal') {
+    closeAddTodoModal();
+    return;
+  }
+  if (e.target.id === 'todoEditModal') {
+    closeEditTodoModal();
+    return;
+  }
+
   const todoLink = e.target.closest('.todo-link');
   if (todoLink) {
     e.preventDefault();
@@ -1598,34 +1608,26 @@ document.addEventListener('click', async (e) => {
   const action = actionEl.dataset.action;
 
   // ---- Todo Actions ----
-  if (action === 'toggle-todo-form') {
-    const form = document.getElementById('todoForm');
-    setTodoFormExpanded(Boolean(form?.classList.contains('collapsed')));
+  if (action === 'open-add-todo') {
+    showAddTodoModal();
     return;
   }
 
-  if (action === 'add-todo') {
-    const input = document.getElementById('todoInput');
-    const dueDateInput = document.getElementById('todoDueDate');
-    const linksResult = collectTodoLinks(document.getElementById('todoLinkFields'));
-    if (linksResult.invalid) {
-      showToast(t('linkInvalid'));
-      return;
+  if (action === 'toggle-todo-priority') {
+    const priority = normalizeTodoPriority(actionEl.dataset.priority);
+    if (openTodoPriorities.has(priority)) {
+      openTodoPriorities.delete(priority);
+    } else {
+      openTodoPriorities.add(priority);
     }
-    const added = await addTodo(input.value, dueDateInput.value, linksResult.links);
-    if (added) {
-      input.value = '';
-      dueDateInput.value = '';
-      resetLinkEditor(document.getElementById('todoLinkFields'));
-      setTodoFormExpanded(false);
-    }
+    await renderTodoSidebar();
     return;
   }
 
-  if (action === 'add-link-row' || action === 'add-edit-link') {
+  if (action === 'add-edit-link' || action === 'add-todo-link') {
     const container = action === 'add-edit-link'
       ? document.getElementById('todoEditLinks')
-      : document.getElementById('todoLinkFields');
+      : document.getElementById('todoAddLinks');
     const row = appendTodoLinkRow(container);
     row?.querySelector('.todo-link-url')?.focus();
     return;
@@ -1636,12 +1638,6 @@ document.addEventListener('click', async (e) => {
     const container = row?.parentElement;
     row?.remove();
     if (container && !container.querySelector('.todo-link-row')) appendTodoLinkRow(container);
-    return;
-  }
-
-  if (action === 'clear-due-date') {
-    const dueDateInput = document.getElementById('todoDueDate');
-    dueDateInput.value = '';
     return;
   }
 
@@ -1666,6 +1662,11 @@ document.addEventListener('click', async (e) => {
 
   if (action === 'cancel-edit') {
     closeEditTodoModal();
+    return;
+  }
+
+  if (action === 'cancel-add') {
+    closeAddTodoModal();
     return;
   }
 
@@ -1863,20 +1864,88 @@ document.addEventListener('dragend', (e) => {
 
 let todos = [];
 
-function setTodoFormExpanded(expanded) {
-  const form = document.getElementById('todoForm');
-  if (!form) return;
+const TODO_PRIORITY_META = {
+  1: { key: 'urgent', colorClass: 'priority-1' },
+  2: { key: 'high', colorClass: 'priority-2' },
+  3: { key: 'normal', colorClass: 'priority-3' },
+  4: { key: 'low', colorClass: 'priority-4' },
+  5: { key: 'lowest', colorClass: 'priority-5' }
+};
 
-  form.classList.toggle('collapsed', !expanded);
-  const trigger = form.querySelector('.todo-form-trigger');
-  trigger?.setAttribute('aria-expanded', String(expanded));
+let openTodoPriorities = new Set([3]);
+let todoPriorityAccordionInitialized = false;
 
-  Array.from(form.children).forEach(child => {
-    if (child === trigger) return;
-    child.hidden = !expanded;
-  });
+function normalizeTodoPriority(value) {
+  const priority = Number(value);
+  return Number.isInteger(priority) && priority >= 1 && priority <= 5 ? priority : 3;
+}
 
-  if (expanded) document.getElementById('todoInput')?.focus();
+function getTodoPriorityLabel(priority) {
+  const normalizedPriority = normalizeTodoPriority(priority);
+  return `P${normalizedPriority} · ${t(TODO_PRIORITY_META[normalizedPriority].key)}`;
+}
+
+function getTodoPriorityOptionsHtml(selectedPriority = 3) {
+  const selected = normalizeTodoPriority(selectedPriority);
+  return Object.entries(TODO_PRIORITY_META)
+    .map(([priority, meta]) => `<option value="${priority}"${Number(priority) === selected ? ' selected' : ''}>${getTodoPriorityLabel(priority)}</option>`)
+    .join('');
+}
+
+function showAddTodoModal() {
+  let modal = document.getElementById('todoAddModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'todoAddModal';
+    modal.className = 'todo-edit-modal todo-add-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'todoAddTitle');
+    modal.innerHTML = `
+      <div class="todo-edit-content">
+        <div class="todo-edit-title" id="todoAddTitle">${t('addTask')}</div>
+        <form class="todo-edit-form" id="todoAddForm">
+          <label class="todo-edit-field">
+            <span>${t('name')}</span>
+            <input type="text" id="todoAddInput" class="todo-edit-input" placeholder="${t('todoPlaceholder')}" autocomplete="off">
+          </label>
+          <label class="todo-edit-field">
+            <span>${t('priority')}</span>
+            <select id="todoAddPriority" class="todo-edit-priority">
+              ${getTodoPriorityOptionsHtml()}
+            </select>
+          </label>
+          <label class="todo-edit-field">
+            <span>${t('dueDate')}</span>
+            <input type="date" id="todoAddDueDate" class="todo-edit-due-date" aria-label="${t('dueDate')}">
+          </label>
+          <div class="todo-links-editor todo-edit-links-editor">
+            <div class="todo-links-editor-heading">
+              <span>${t('links')}</span>
+              <button type="button" class="todo-link-add-btn" data-action="add-todo-link">+ ${t('addLink')}</button>
+            </div>
+            <div class="todo-link-fields" id="todoAddLinks"></div>
+          </div>
+          <div class="todo-edit-buttons">
+            <button type="button" class="todo-edit-btn cancel" data-action="cancel-add">${t('cancel')}</button>
+            <button type="submit" class="todo-edit-btn primary">${t('add')}</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  document.getElementById('todoAddInput').value = '';
+  document.getElementById('todoAddPriority').value = '3';
+  document.getElementById('todoAddDueDate').value = '';
+  resetLinkEditor(document.getElementById('todoAddLinks'));
+  modal.classList.add('open');
+  document.getElementById('todoAddInput').focus();
+}
+
+function closeAddTodoModal() {
+  document.getElementById('todoAddModal')?.classList.remove('open');
 }
 
 function normalizeHttpUrl(value) {
@@ -1932,6 +2001,7 @@ function normalizeTodo(todo) {
     text,
     dueDate: todo.dueDate || null,
     links,
+    priority: normalizeTodoPriority(todo.priority),
     completed: Boolean(todo.completed),
     completedAt: todo.completedAt || null,
     createdAt: todo.createdAt || new Date().toISOString()
@@ -1961,7 +2031,7 @@ function generateTodoId() {
   return 'todo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 }
 
-function formatDate(dateStr) {
+function formatDate(dateStr, hideOverdue = false) {
   if (!dateStr) return null;
   const date = new Date(dateStr);
   const today = new Date();
@@ -1971,7 +2041,10 @@ function formatDate(dateStr) {
   
   const diffDays = Math.floor((todoDate - today) / (1000 * 60 * 60 * 24));
   
-  if (diffDays < 0) return { text: t('overdue', Math.abs(diffDays)), class: 'deadline-red' };
+  if (diffDays < 0) {
+    if (hideOverdue) return null;
+    return { text: t('overdue', Math.abs(diffDays)), class: 'deadline-red' };
+  }
   if (diffDays <= 1) return { text: diffDays === 0 ? t('today') : t('tomorrow'), class: 'deadline-red' };
   if (diffDays <= 3) return { text: t('daysAfter', diffDays), class: 'deadline-yellow' };
   if (diffDays <= 7) return { text: t('daysAfter', diffDays), class: 'deadline-green' };
@@ -2090,8 +2163,9 @@ function renderTodoItem(todo) {
   text.textContent = todo.text;
   content.appendChild(text);
 
-  const dueDateInfo = formatDate(todo.dueDate);
+  const dueDateInfo = formatDate(todo.dueDate, todo.completed);
   const completedDate = formatCompletedDate(todo.completedAt);
+  let dateMeta = null;
   if (dueDateInfo || completedDate) {
     const meta = document.createElement('div');
     meta.className = 'todo-meta';
@@ -2107,7 +2181,7 @@ function renderTodoItem(todo) {
       completed.textContent = t('completedAt', completedDate);
       meta.appendChild(completed);
     }
-    content.appendChild(meta);
+    dateMeta = meta;
   }
 
   if (todo.links.length > 0) {
@@ -2151,35 +2225,87 @@ function renderTodoItem(todo) {
   deleteButton.setAttribute('aria-label', `删除${todo.text}`);
   deleteButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>';
 
-  actions.append(editButton, deleteButton);
+  const actionButtons = document.createElement('div');
+  actionButtons.className = 'todo-action-buttons';
+  actionButtons.append(editButton, deleteButton);
+  actions.appendChild(actionButtons);
+  if (dateMeta) actions.appendChild(dateMeta);
   item.append(checkbox, content, actions);
   return item;
 }
 
+function compareTodoByTime(a, b) {
+  const dueA = a.dueDate ? Date.parse(a.dueDate) : Number.POSITIVE_INFINITY;
+  const dueB = b.dueDate ? Date.parse(b.dueDate) : Number.POSITIVE_INFINITY;
+  const safeDueA = Number.isFinite(dueA) ? dueA : Number.POSITIVE_INFINITY;
+  const safeDueB = Number.isFinite(dueB) ? dueB : Number.POSITIVE_INFINITY;
+  if (safeDueA !== safeDueB) return safeDueA - safeDueB;
+
+  const createdA = Date.parse(a.createdAt || '') || 0;
+  const createdB = Date.parse(b.createdAt || '') || 0;
+  return createdB - createdA;
+}
+
+function getActiveTodoGroups() {
+  const groups = new Map();
+  todos.filter(todo => !todo.completed).forEach(todo => {
+    const priority = normalizeTodoPriority(todo.priority);
+    if (!groups.has(priority)) groups.set(priority, []);
+    groups.get(priority).push(todo);
+  });
+
+  groups.forEach(group => group.sort(compareTodoByTime));
+  return [...groups.entries()].sort((a, b) => a[0] - b[0]);
+}
+
+function renderTodoPriorityGroup(priority, groupTodos) {
+  const group = document.createElement('div');
+  const meta = TODO_PRIORITY_META[priority];
+  const isOpen = openTodoPriorities.has(priority);
+  const listId = `todoPriorityList${priority}`;
+  group.className = `drawer-group todo-priority-group ${meta.colorClass}`;
+
+  const header = document.createElement('button');
+  header.type = 'button';
+  header.className = 'drawer-group-header todo-priority-header';
+  header.dataset.action = 'toggle-todo-priority';
+  header.dataset.priority = String(priority);
+  header.setAttribute('aria-expanded', String(isOpen));
+  header.setAttribute('aria-controls', listId);
+
+  const label = document.createElement('span');
+  label.className = 'drawer-group-name todo-priority-group-label';
+  label.textContent = getTodoPriorityLabel(priority);
+
+  const count = document.createElement('span');
+  count.className = 'drawer-group-count todo-priority-group-count';
+  count.textContent = groupTodos.length;
+
+  const chevron = document.createElement('span');
+  chevron.className = `drawer-group-toggle todo-priority-toggle${isOpen ? ' open' : ''}`;
+  chevron.setAttribute('aria-hidden', 'true');
+  chevron.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>';
+  header.append(label, count, chevron);
+
+  const list = document.createElement('div');
+  list.className = 'drawer-group-content todo-priority-list';
+  list.id = listId;
+  list.hidden = !isOpen;
+  groupTodos.forEach(todo => list.appendChild(renderTodoItem(todo)));
+
+  group.append(header, list);
+  return group;
+}
+
 async function renderTodoSidebar() {
   await loadTodos();
-  
-  // 未完成的任务按截止时间排序（越近越靠前）
-  const activeTodos = todos.filter(t => !t.completed).sort((a, b) => {
-    const hasDueDateA = !!a.dueDate;
-    const hasDueDateB = !!b.dueDate;
-    
-    // 都有截止日期，按日期远近排序
-    if (hasDueDateA && hasDueDateB) {
-      const dateA = new Date(a.dueDate).getTime();
-      const dateB = new Date(b.dueDate).getTime();
-      return dateA - dateB;
-    }
-    
-    // 只有一个有截止日期，有截止日期的排前面
-    if (hasDueDateA) return -1;
-    if (hasDueDateB) return 1;
-    
-    // 都没有截止日期，按创建时间排序（最新创建的在前）
-    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return timeB - timeA;
-  });
+
+  const activeGroups = getActiveTodoGroups();
+  const activeTodos = activeGroups.flatMap(([, group]) => group);
+  if (!todoPriorityAccordionInitialized && activeGroups.length > 0) {
+    openTodoPriorities.add(activeGroups[0][0]);
+    todoPriorityAccordionInitialized = true;
+  }
   
   // 已完成的任务按完成时间排序（最新完成的在前）
   const completedTodos = todos.filter(t => t.completed).sort((a, b) => {
@@ -2190,49 +2316,40 @@ async function renderTodoSidebar() {
   
   const activeTodoList = document.getElementById('activeTodoList');
   const completedTodoList = document.getElementById('completedTodoList');
-  const activeEmpty = document.getElementById('activeEmpty');
-  const completedEmpty = document.getElementById('completedEmpty');
-  const activeTodoCount = document.getElementById('activeTodoCount');
   const completedTodoCount = document.getElementById('completedTodoCount');
   const todoStats = document.getElementById('todoStats');
   
   const activeCount = activeTodos.length;
   const completedCount = completedTodos.length;
   
-  // Render active todos
+  // Render active todos grouped by priority.
   if (activeCount === 0) {
     activeTodoList.replaceChildren();
-    if (activeEmpty) activeEmpty.hidden = false;
   } else {
-    if (activeEmpty) activeEmpty.hidden = true;
     const fragment = document.createDocumentFragment();
-    activeTodos.forEach(todo => fragment.appendChild(renderTodoItem(todo)));
+    activeGroups.forEach(([priority, groupTodos]) => {
+      fragment.appendChild(renderTodoPriorityGroup(priority, groupTodos));
+    });
     activeTodoList.replaceChildren(fragment);
   }
   
   // Render completed todos
   if (completedCount === 0) {
     completedTodoList.replaceChildren();
-    if (completedEmpty) completedEmpty.hidden = false;
   } else {
-    if (completedEmpty) completedEmpty.hidden = true;
     const fragment = document.createDocumentFragment();
     completedTodos.forEach(todo => fragment.appendChild(renderTodoItem(todo)));
     completedTodoList.replaceChildren(fragment);
   }
   
   // Update counts
-  if (activeTodoCount) activeTodoCount.textContent = activeCount;
   if (completedTodoCount) completedTodoCount.textContent = completedCount;
   
   if (todoStats) {
     const activeCountEl = document.createElement('span');
     activeCountEl.className = 'todo-active-count';
     activeCountEl.textContent = activeCount;
-    const completedCountEl = document.createElement('span');
-    completedCountEl.className = 'todo-completed-count';
-    completedCountEl.textContent = completedCount;
-    todoStats.replaceChildren(activeCountEl, document.createTextNode(` ${t('activeSuffix')} · `), completedCountEl, document.createTextNode(` ${t('completedSuffix')}`));
+    todoStats.replaceChildren(activeCountEl, document.createTextNode(` ${t('activeSuffix')}`));
   }
 }
 
@@ -2257,6 +2374,12 @@ function showEditTodoModal(todo) {
             <input type="text" id="todoEditText" class="todo-edit-input" placeholder="${t('todoPlaceholder')}" autocomplete="off">
           </label>
           <label class="todo-edit-field">
+            <span>${t('priority')}</span>
+            <select id="todoEditPriority" class="todo-edit-priority">
+              ${getTodoPriorityOptionsHtml(todo.priority)}
+            </select>
+          </label>
+          <label class="todo-edit-field">
             <span>${t('dueDate')}</span>
             <input type="date" id="todoEditDueDate" class="todo-edit-due-date">
           </label>
@@ -2279,6 +2402,7 @@ function showEditTodoModal(todo) {
   
   document.getElementById('todoEditId').value = todo.id;
   document.getElementById('todoEditText').value = todo.text;
+  document.getElementById('todoEditPriority').value = String(normalizeTodoPriority(todo.priority));
   document.getElementById('todoEditDueDate').value = todo.dueDate || '';
 
   const linksContainer = document.getElementById('todoEditLinks');
@@ -2297,7 +2421,7 @@ function closeEditTodoModal() {
   }
 }
 
-async function addTodo(text, dueDate, links = []) {
+async function addTodo(text, dueDate, links = [], priority = 3) {
   if (!text.trim()) {
     showToast(t('enterName'));
     return false;
@@ -2308,6 +2432,7 @@ async function addTodo(text, dueDate, links = []) {
     text: text.trim(),
     dueDate: dueDate || null,
     links: sanitizeTodoLinks(links),
+    priority: normalizeTodoPriority(priority),
     completed: false,
     completedAt: null,
     createdAt: new Date().toISOString()
@@ -2334,7 +2459,7 @@ async function toggleTodo(id) {
   showToast(todo.completed ? '已完成待办' : '已恢复待办');
 }
 
-async function updateTodo(id, text, dueDate, links = []) {
+async function updateTodo(id, text, dueDate, links = [], priority = 3) {
   if (!text.trim()) {
     showToast(t('enterName'));
     return false;
@@ -2346,6 +2471,7 @@ async function updateTodo(id, text, dueDate, links = []) {
   todo.text = text.trim();
   todo.dueDate = dueDate || null;
   todo.links = sanitizeTodoLinks(links);
+  todo.priority = normalizeTodoPriority(priority);
   
   await saveTodos();
   await renderTodoSidebar();
@@ -2364,10 +2490,27 @@ async function deleteTodo(id) {
 
 // ---- Todo edit form submit ----
 document.addEventListener('submit', async (e) => {
+  if (e.target.id === 'todoAddForm') {
+    e.preventDefault();
+    const text = document.getElementById('todoAddInput').value;
+    const priority = document.getElementById('todoAddPriority').value;
+    const dueDate = document.getElementById('todoAddDueDate').value;
+    const linksResult = collectTodoLinks(document.getElementById('todoAddLinks'));
+    if (linksResult.invalid) {
+      showToast(t('linkInvalid'));
+      return;
+    }
+
+    const added = await addTodo(text, dueDate, linksResult.links, priority);
+    if (added) closeAddTodoModal();
+    return;
+  }
+
   if (e.target.id === 'todoEditForm') {
     e.preventDefault();
     const id = document.getElementById('todoEditId').value;
     const text = document.getElementById('todoEditText').value;
+    const priority = document.getElementById('todoEditPriority').value;
     const dueDate = document.getElementById('todoEditDueDate').value;
     const linksResult = collectTodoLinks(document.getElementById('todoEditLinks'));
     if (linksResult.invalid) {
@@ -2375,16 +2518,8 @@ document.addEventListener('submit', async (e) => {
       return;
     }
 
-    const updated = await updateTodo(id, text, dueDate, linksResult.links);
+    const updated = await updateTodo(id, text, dueDate, linksResult.links, priority);
     if (updated) closeEditTodoModal();
-  }
-});
-
-// ---- Todo input enter key ----
-document.addEventListener('keydown', (e) => {
-  if (e.target.id === 'todoInput' && e.key === 'Enter') {
-    const addBtn = document.querySelector('[data-action="add-todo"]');
-    if (addBtn) addBtn.click();
   }
 });
 
@@ -2463,6 +2598,7 @@ function setupDrawerHandlers() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeEditTodoModal();
+      closeAddTodoModal();
     }
   });
 }
@@ -3529,5 +3665,4 @@ setupDrawerHandlers();
 setupSidebarToggleHandlers();
 window.addEventListener('resize', refreshAutoContrast, { passive: true });
 setupClock();
-setTodoFormExpanded(false);
 renderDashboard();

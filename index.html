@@ -158,7 +158,12 @@
     <!-- Todo section -->
     <aside class="todo-sidebar collapsed" id="todoSidebar">
       <div class="sidebar-header">
-        <div class="sidebar-title">待办清单</div>
+        <div class="todo-sidebar-heading">
+          <div class="sidebar-title">待办清单</div>
+          <div class="todo-stats" id="todoStats">
+            <span class="todo-active-count">0</span> 项待处理
+          </div>
+        </div>
         <button class="sidebar-toggle" data-sidebar="todo" aria-label="展开待办清单" aria-expanded="false">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -166,65 +171,14 @@
         </button>
       </div>
       <div class="sidebar-content" id="todoSidebarContent">
-        <!-- Todo form -->
-        <div class="todo-form collapsed" id="todoForm">
-          <button type="button" class="todo-form-trigger" data-action="toggle-todo-form" aria-expanded="false" aria-controls="todoInput todoLinkFields todoDueDate">
-            <span class="todo-form-trigger-copy">
-              <strong>添加待办</strong>
-            </span>
-            <span class="todo-form-trigger-icon" aria-hidden="true">+</span>
-          </button>
-          <div class="todo-input-row">
-            <div class="todo-input-wrapper">
-              <svg class="todo-input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 002 2" />
-              </svg>
-              <input type="text" id="todoInput" placeholder="要做什么？" class="todo-input" autocomplete="off" aria-label="待办名称">
-            </div>
-          </div>
-          <div class="todo-action-row">
-            <div class="todo-date-wrapper">
-              <input type="date" id="todoDueDate" class="todo-due-date" aria-label="截止日期" title="截止日期">
-              <button type="button" class="todo-date-clear" data-action="clear-due-date" title="清除日期" aria-label="清除截止日期">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              <svg class="todo-date-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-              <button type="button" class="todo-add-btn" data-action="add-todo" title="添加待办" aria-label="添加待办">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          </div>
-          <div class="todo-links-editor" id="todoLinksInput" aria-label="待办链接">
-            <div class="todo-links-editor-heading">
-              <span>链接</span>
-              <button type="button" class="todo-link-add-btn" data-action="add-link-row">+ 添加链接</button>
-            </div>
-            <div class="todo-link-fields" id="todoLinkFields">
-              <div class="todo-link-row">
-                <input type="text" class="todo-link-label" placeholder="名称" aria-label="链接名称">
-                <input type="url" class="todo-link-url" placeholder="https://example.com" inputmode="url" autocomplete="url" aria-label="链接地址">
-                <button type="button" class="todo-link-remove-btn" data-action="remove-link-row" title="删除链接" aria-label="删除链接">×</button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <button type="button" class="todo-add-trigger" data-action="open-add-todo">
+          <span>添加待办</span>
+          <span aria-hidden="true">＋</span>
+        </button>
         
         <!-- Active todos section -->
         <div class="todo-section active-section">
-          <div class="todo-section-header">
-            <h3 class="todo-section-title">待处理</h3>
-            <span class="todo-section-count" id="activeTodoCount">0</span>
-          </div>
           <div class="todo-list" id="activeTodoList"></div>
-          <div class="todo-empty" id="activeEmpty" hidden>
-            Your next step will show up here.
-          </div>
         </div>
         
         <!-- Completed todos section -->
@@ -234,14 +188,6 @@
             <span class="todo-section-count" id="completedTodoCount">0</span>
           </div>
           <div class="todo-list" id="completedTodoList"></div>
-          <div class="todo-empty" id="completedEmpty" hidden>
-            Completed tasks stay here for reference.
-          </div>
-        </div>
-        
-        <!-- Stats -->
-        <div class="todo-stats" id="todoStats">
-          <span class="todo-active-count">0</span> 项待处理 · <span class="todo-completed-count">0</span> 项已完成
         </div>
       </div>
     </aside>

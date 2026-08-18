@@ -2467,23 +2467,30 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 }
 
 /* ---- Todo Stats ---- */
+.todo-sidebar-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
 .todo-stats {
-  font-size: 11px;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex-shrink: 0;
+  font-size: 10px;
   color: var(--muted);
-  text-align: center;
-  padding: 12px;
-  border-top: 1px solid var(--warm-gray);
-  margin: 0 -12px -12px;
+  text-align: left;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  white-space: nowrap;
 }
 
 .todo-active-count {
   font-weight: 600;
   color: var(--accent-amber);
-}
-
-.todo-completed-count {
-  font-weight: 600;
-  color: var(--accent-sage);
 }
 
 /* ---- Todo Edit Modal ---- */
@@ -4176,5 +4183,171 @@ html.effects-disabled .header-left .date::before {
   .section-count,
   .sidebar-title {
     color: var(--ink);
+  }
+}
+
+/* Five-level todo priority system: red = urgent, orange = high, gold = normal,
+   blue = low, slate = lowest. Text labels remain visible alongside color. */
+.todo-section-tools {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.todo-priority-select,
+.todo-edit-priority {
+  min-width: 96px;
+  height: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--paper) 28%, transparent);
+  color: var(--ink);
+  font: 600 11px var(--system-font);
+  outline: none;
+}
+
+.todo-priority-select:focus,
+.todo-edit-priority:focus {
+  border-color: color-mix(in srgb, var(--accent-amber) 48%, white);
+}
+
+.todo-priority-group {
+  --priority-color: #76838f;
+  --priority-tint: #eef1f3;
+}
+
+.todo-priority-group.priority-1 { --priority-color: #c84458; --priority-tint: #fdebed; }
+.todo-priority-group.priority-2 { --priority-color: #d8792f; --priority-tint: #fff0e4; }
+.todo-priority-group.priority-3 { --priority-color: #a97900; --priority-tint: #fff7d6; }
+.todo-priority-group.priority-4 { --priority-color: #3f78b5; --priority-tint: #eaf3fb; }
+.todo-priority-group.priority-5 { --priority-color: #76838f; --priority-tint: #eef1f3; }
+
+.todo-priority-group {
+  margin-bottom: 4px;
+}
+
+.todo-add-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+  margin: 2px 0 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--paper) 28%, transparent);
+  color: var(--ink);
+  font: 700 12px var(--system-font);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--glass-inner-shadow), 0 5px 14px color-mix(in srgb, var(--ink) 7%, transparent);
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms var(--spring), box-shadow 160ms ease;
+}
+
+.todo-add-trigger:hover,
+.todo-add-trigger:focus-visible {
+  border-color: color-mix(in srgb, var(--accent-amber) 34%, transparent);
+  background: color-mix(in srgb, var(--accent-amber) 9%, var(--paper) 24%);
+  outline: none;
+  transform: translateY(-1px);
+  box-shadow: var(--glass-inner-shadow), 0 9px 20px color-mix(in srgb, var(--ink) 11%, transparent);
+}
+
+.todo-add-trigger span:last-child {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid color-mix(in srgb, var(--accent-amber) 25%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent-amber) 10%, transparent);
+  color: var(--accent-amber);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.todo-add-modal .todo-edit-content {
+  max-height: min(88vh, 620px);
+  overflow-y: auto;
+}
+
+.todo-priority-header {
+  width: 100%;
+  border: 0;
+  border-left: 3px solid var(--priority-color);
+  background: transparent;
+  color: var(--priority-color);
+  text-align: left;
+}
+
+.todo-priority-header:hover,
+.todo-priority-header:focus-visible {
+  color: var(--priority-color);
+  outline: none;
+}
+
+.todo-priority-group-count {
+  color: var(--priority-color);
+}
+
+.todo-priority-list .todo-item:last-child {
+  border-bottom: 0;
+}
+
+.todo-actions {
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.todo-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.todo-actions .todo-meta {
+  max-width: 84px;
+  margin: 0;
+  justify-content: center;
+  text-align: center;
+  flex-wrap: wrap;
+}
+
+.todo-edit-field select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 430px) {
+  .todo-sidebar-heading {
+    gap: 6px;
+  }
+
+  .todo-stats {
+    font-size: 9px;
+  }
+
+  .todo-priority-select {
+    min-width: 88px;
+  }
+
+  .todo-priority-group {
+    margin-bottom: 4px;
   }
 }

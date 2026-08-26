@@ -1594,7 +1594,7 @@ document.addEventListener('click', async (e) => {
       return;
     }
     try {
-      await chrome.tabs.create({ url });
+      await openTodoOrBookmarkUrl(url, e);
     } catch (err) {
       showToast(t('linkOpenFailed'));
     }
@@ -1698,7 +1698,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Open a bookmark in the current tab ----
+  // ---- Open a bookmark in the current tab, or a background tab with Ctrl ----
   if (action === 'open-bookmark') {
     const url = actionEl.dataset.bookmarkUrl;
     if (!url) return;
@@ -1708,7 +1708,7 @@ document.addEventListener('click', async (e) => {
     openTimes[url] = Date.now();
     localStorage.setItem('bookmarkOpenTimes', JSON.stringify(openTimes));
 
-    await chrome.tabs.update({ url });
+    await openTodoOrBookmarkUrl(url, e);
     showToast(t('bookmarkOpened'));
     return;
   }
@@ -1963,6 +1963,14 @@ function normalizeHttpUrl(value) {
   }
 }
 
+async function openTodoOrBookmarkUrl(url, event) {
+  if (event?.ctrlKey) {
+    await chrome.tabs.create({ url, active: false });
+    return;
+  }
+  await chrome.tabs.update({ url });
+}
+
 function normalizeTodoLink(link) {
   const source = typeof link === 'string' ? { url: link } : (link || {});
   const url = normalizeHttpUrl(source.url || source.href);
@@ -2194,8 +2202,6 @@ function renderTodoItem(todo) {
       const anchor = document.createElement('a');
       anchor.className = 'todo-link';
       anchor.href = link.url;
-      anchor.target = '_blank';
-      anchor.rel = 'noopener noreferrer';
       anchor.title = link.url;
       anchor.textContent = link.label || getTodoLinkLabel(link.url);
       const icon = document.createElement('span');
@@ -3037,8 +3043,8 @@ async function performSearch(query) {
 
   // Add click handlers to results
   searchResults.querySelectorAll('.search-result-item').forEach(item => {
-    item.addEventListener('click', () => {
-      activateSearchResult(item);
+    item.addEventListener('click', (event) => {
+      activateSearchResult(item, event);
     });
   });
 }
@@ -3113,11 +3119,11 @@ function navigateSearchResults(items, direction) {
 }
 
 /**
- * activateSearchResult(item)
+ * activateSearchResult(item, event)
  *
  * Activates the selected tab or opens the selected bookmark.
  */
-async function activateSearchResult(item) {
+async function activateSearchResult(item, event) {
   if (item.dataset.resultType === 'bookmark') {
     const url = item.dataset.bookmarkUrl;
     if (!url) return;
@@ -3126,7 +3132,7 @@ async function activateSearchResult(item) {
       const openTimes = getBookmarkOpenTimes();
       openTimes[url] = Date.now();
       localStorage.setItem('bookmarkOpenTimes', JSON.stringify(openTimes));
-      await chrome.tabs.update({ url });
+      await openTodoOrBookmarkUrl(url, event);
       closeSearch();
     } catch (err) {
       console.error('[tab-out] Failed to open bookmark search result:', err);
